@@ -1,0 +1,2342 @@
+---
+# =============================================================================
+# GenAI HR Assistant Agent - CloudFormation Template
+# Version: 1.0
+# =============================================================================
+# Deploys AI-powered HR assistant Agent using Amazon Bedrock Agents.
+#
+# Deploy: aws cloudformation deploy --template-file CFN-AWS-GenAI-HR-Assistant-Agent.yaml \
+#         --stack-name hr-assistant-agent --capabilities CAPABILITY_IAM \
+#         --parameter-overrides SourceEmailAddress=your-email@company.com
+#
+# NOTE: Stack name must be lowercase
+# =============================================================================
+
+AWSTemplateFormatVersion: "2010-09-09"
+Description: GenAI HR Assistant Agent - An AI-powered HR assistant Agent using Amazon Bedrock Agents.
+  
+Parameters:
+  GenAIProjectUseCase:
+      Type: String
+      Description: The use case of your GenAI Project
+      Default: HR Assistant Agent
+      AllowedValues:
+        - HR Assistant Agent
+
+  EmbeddingModelName:
+      Type: String
+      Description: The Name of the GenAI project embedding model to embed your data sources in the Amazon Opensearch Serverless vector store.
+      Default: amazon.titan-embed-text-v1
+      AllowedValues:
+        - amazon.titan-embed-text-v1
+        - amazon.titan-embed-text-v2:0
+        - cohere.embed-english-v3
+        - cohere.embed-multilingual-v3
+
+  TextModelName:
+      Type: String
+      Description: The Name of the GenAI project text model to generate responses after retrieving information from knowledge base. We are using models with on-demand inference for the moment. For other models like Claude 3.7 Sonnet, you need to create inference profiles.
+      Default: anthropic.claude-3-5-sonnet-20240620-v1:0
+      AllowedValues:
+        - amazon.titan-text-premier-v1:0
+        - amazon.nova-pro-v1:0
+        - amazon.nova-lite-v1:0
+        - amazon.nova-micro-v1:0
+        - anthropic.claude-3-haiku-20240307-v1:0
+        - anthropic.claude-3-5-sonnet-20240620-v1:0
+        - meta.llama3-8b-instruct-v1:0
+        - meta.llama3-70b-instruct-v1:0
+        - mistral.mistral-7b-instruct-v0:2
+        - mistral.mixtral-8x7b-instruct-v0:1
+        - mistral.mistral-large-2402-v1:0
+
+  SourceEmailAddress:
+      Type: String
+      Description: Source email address for Amazon SES (confirmation email will be sent)
+
+Mappings: 
+  RegionMap: 
+    us-east-1: 
+      HVM64: "ami-0cbbe2c6a1bb2ad63"
+    us-east-2: 
+      HVM64: "ami-0cd582ee8a22cc7be"
+    us-west-1: 
+      HVM64: "ami-0dfb94b61190e2d22"
+    us-west-2: 
+      HVM64: "ami-04158184f60ea8b5e"
+
+Resources:
+  SESEmailIdentity:
+    Type: AWS::SES::EmailIdentity
+    Properties:
+      EmailIdentity: !Ref SourceEmailAddress
+  AossIndexLambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Fn::GetAtt:
+          - AossIndexLambdaFunction
+          - Arn
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn:
+        Fn::GetAtt:
+          - "AossIndexLambdaEventRule"
+          - "Arn"
+  AossIndexLambdaEventRule:
+    Type: "AWS::Events::Rule"
+    Properties:
+      Description: A trigger for the Lambda function.
+      EventPattern: 
+        source: 
+          - aws.cloudformation
+        detail-type: 
+          - "CloudFormation Resource Status Change"
+        detail: 
+          stack-id: 
+            - !Sub ${AWS::StackId}
+          resource-type: 
+            - AWS::OpenSearchServerless::Collection
+          status-details:
+            status: 
+              - CREATE_COMPLETE
+      State: ENABLED
+      Targets:
+        - Arn: !Sub ${AossIndexLambdaFunction.Arn}
+          Id: LambdaEventRuleTrigger
+
+  AossIndexLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub oss-create-index-lbd-${AWS::StackName}
+      Handler: "index.lambda_handler"
+      Timeout: 900
+      Role: !GetAtt "AossIndexLambdaFunctionExecutionRole.Arn"
+      Runtime: python3.13
+      Environment:
+        Variables: 
+          BEDROCK_EMBEDDING_MODEL_NAME: !Ref EmbeddingModelName
+      Code:
+        ZipFile: |
+          import boto3
+          import os
+          import sys
+          import subprocess
+
+          subprocess.call('pip install opensearch-py -t /tmp/ --no-cache-dir'.split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+          sys.path.insert(1, '/tmp/')
+          
+          from opensearchpy import OpenSearch, RequestsHttpConnection, AWSV4SignerAuth
+          
+          # Model dimension mapping
+          DIMENSION_MAP = {
+              'amazon.titan-embed-text-v1': 1536,
+              'amazon.titan-embed-text-v2:0': 1536,
+              'cohere.embed-english-v3': 1024,
+              'cohere.embed-multilingual-v3': 1024
+          }
+          
+          def lambda_handler(event, context):
+              try:
+                  session = boto3.Session()
+                  region = session.region_name
+                  credentials = session.get_credentials()
+                  
+                  collection_id = event['detail']['physical-resource-id']
+                  host = f'{collection_id}.{region}.aoss.amazonaws.com'
+                  
+                  client = OpenSearch(
+                      hosts=[{'host': host, 'port': 443}],
+                      http_auth=AWSV4SignerAuth(credentials, region, 'aoss'),
+                      use_ssl=True,
+                      verify_certs=True,
+                      connection_class=RequestsHttpConnection
+                  )
+                  
+                  model = os.environ['BEDROCK_EMBEDDING_MODEL_NAME']
+                  dimension = DIMENSION_MAP.get(model, 1536)
+                  index_name = 'bedrock-knowledge-base-index'
+                  
+                  index_body = {
+                      'settings': {'index': {'knn.algo_param': {'ef_search': 512}, 'knn': True}},
+                      'mappings': {
+                          'properties': {
+                              'AMAZON_BEDROCK_METADATA': {'type': 'text'},
+                              'AMAZON_BEDROCK_TEXT_CHUNK': {'type': 'text'},
+                              'bedrock-knowledge-base-vector': {
+                                  'type': 'knn_vector',
+                                  'dimension': dimension,
+                                  'method': {
+                                      'engine': 'faiss',
+                                      'name': 'hnsw',
+                                      'space_type': 'l2',
+                                      'parameters': {'ef_construction': 512, 'm': 16}
+                                  }
+                              }
+                          }
+                      }
+                  }
+                  
+                  response = client.indices.create(index=index_name, body=index_body)
+                  print(f"Index '{index_name}' created: {response}")
+                  return {"status": "created", "index": index_name}
+              except Exception as e:
+                  print(f'Error: {str(e)}')
+                  raise
+
+  AossIndexLambdaFunctionExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: !Sub oss-create-index-lbd-rol-${AWS::StackName}
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Path: /
+      Policies:
+        - PolicyName: !Sub oss-create-index-lbd-rol-pol-${AWS::StackName}
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: !GetAtt AossIndexLambdaFunctionCloudWatchLogGroup.Arn
+              - Effect: Allow
+                Action:
+                  - "aoss:*"
+                Resource: "*"
+
+  AossIndexLambdaFunctionCloudWatchLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/oss-create-index-lbd-${AWS::StackName}
+      RetentionInDays: 1
+
+### Amazon OpenSearch Serverless Vector Store
+  AossEncryptionPolicy:
+    Type: AWS::OpenSearchServerless::SecurityPolicy
+    Properties:
+      Name: !Sub oss-ep-${AWS::StackName}
+      Type: encryption
+      Description: Encryption policy for OpenSearch collection
+      Policy: !Sub |
+        {
+          "Rules": [{
+            "ResourceType": "collection",
+            "Resource": ["collection/oss-collection-${AWS::StackName}"]
+          }],
+          "AWSOwnedKey": true
+        }
+  
+  AossNetworkPolicy:
+    Type: AWS::OpenSearchServerless::SecurityPolicy
+    Properties:
+      Name: !Sub oss-np-${AWS::StackName}
+      Type: network
+      Description: Network policy for OpenSearch collection
+      Policy: !Sub |
+        [{
+          "Rules": [
+            {"ResourceType": "collection", "Resource": ["collection/oss-collection-${AWS::StackName}"]},
+            {"ResourceType": "dashboard", "Resource": ["collection/oss-collection-${AWS::StackName}"]}
+          ],
+          "AllowFromPublic": true
+        }]
+
+  AossAccessPolicy:
+    Type: AWS::OpenSearchServerless::AccessPolicy
+    Properties:
+      Name: !Sub oss-ap-${AWS::StackName}
+      Type: data
+      Description: Data access policy for OpenSearch collection
+      Policy: !Sub |
+        [{
+          "Description": "Access for Bedrock and Lambda",
+          "Rules": [
+            {"ResourceType": "index", "Resource": ["index/oss-collection-${AWS::StackName}/*"], "Permission": ["aoss:*"]},
+            {"ResourceType": "collection", "Resource": ["collection/oss-collection-${AWS::StackName}"], "Permission": ["aoss:*"]}
+          ],
+          "Principal": [
+            "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/oss-create-index-lbd-rol-${AWS::StackName}",
+            "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/bedrock-kb-rol-${AWS::StackName}"
+          ]
+        }]
+
+  AossCollection:
+    Type: AWS::OpenSearchServerless::Collection
+    Properties:
+      Name: !Sub oss-collection-${AWS::StackName}
+      Type: VECTORSEARCH
+      Description: Vector search collection for Bedrock knowledge base
+    DependsOn: 
+      - AossEncryptionPolicy
+      - AossNetworkPolicy
+      - AossAccessPolicy
+      - AossIndexLambdaFunction
+      - AossIndexLambdaEventRule
+      - AossIndexLambdaInvokePermission
+      - AossIndexLambdaFunctionCloudWatchLogGroup
+
+### Amazon Bedrock ### 
+  BedrockDataSourceS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub bedrock-data-source-s3b-${AWS::StackName}
+  BedrockKnowledgeBaseRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: !Sub bedrock-kb-rol-${AWS::StackName}
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - bedrock.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+            Condition:
+              StringEquals:
+                "aws:SourceAccount": !Ref AWS::AccountId
+      Path: /
+      Policies:
+        - PolicyName: !Sub bedrock-kb-rol-pol-${AWS::StackName}
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "bedrock:ListFoundationModels"
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "bedrock:InvokeModel"
+                Resource:
+                  - !Sub arn:${AWS::Partition}:bedrock:${AWS::Region}::foundation-model/${EmbeddingModelName}
+                  - !Sub arn:${AWS::Partition}:bedrock:${AWS::Region}::foundation-model/${TextModelName}
+              - Effect: Allow
+                Action:
+                  - "s3:GetObject"
+                  - "s3:ListBucket"
+                Resource:
+                  - !Join ['',['arn:', !Ref AWS::Partition, ':s3:::', !Ref BedrockDataSourceS3Bucket]]
+                  - !Join ['',['arn:', !Ref AWS::Partition, ':s3:::', !Ref BedrockDataSourceS3Bucket, '/*']]
+              - Effect: Allow
+                Action:
+                  - "aoss:APIAccessAll"
+                Resource:
+                  - !GetAtt AossCollection.Arn 
+
+  BedrockKnowledgeBaseWithAoss:
+    Type: AWS::Bedrock::KnowledgeBase
+    Properties:
+      Name: !Sub bedrock-kb-${AWS::StackName}
+      Description: !Sub bedrock-kb-${AWS::StackName}
+      RoleArn: !GetAtt BedrockKnowledgeBaseRole.Arn  
+      KnowledgeBaseConfiguration:
+        Type: "VECTOR"
+        VectorKnowledgeBaseConfiguration:
+          EmbeddingModelArn: !Sub "arn:${AWS::Partition}:bedrock:${AWS::Region}::foundation-model/${EmbeddingModelName}"
+      StorageConfiguration:
+        Type: "OPENSEARCH_SERVERLESS"
+        OpensearchServerlessConfiguration:
+          CollectionArn: !GetAtt AossCollection.Arn 
+          VectorIndexName: bedrock-knowledge-base-index
+          FieldMapping:
+            VectorField: bedrock-knowledge-base-vector
+            TextField: AMAZON_BEDROCK_TEXT_CHUNK
+            MetadataField: AMAZON_BEDROCK_METADATA
+    DependsOn:
+      - WebAppCloudFrontDistribution
+      # This dependency provides timing for AOSS index creation
+      # Future enhancement: Replace with custom wait resource for proper AOSS index readiness check
+
+  BedrockDataSource:
+    Type: AWS::Bedrock::DataSource
+    Properties:
+      KnowledgeBaseId: !Ref BedrockKnowledgeBaseWithAoss
+      Name: !Sub bedrock-kb-data-source-${AWS::StackName} 
+      Description: Bedrock Knowledge base data source
+      DataSourceConfiguration:
+        Type: "S3"
+        S3Configuration:
+          BucketArn: !GetAtt BedrockDataSourceS3Bucket.Arn
+    DependsOn:
+      - BedrockCreationSyncLambdaFunction
+      - BedrockCreationSyncLambdaInvokePermission
+      - BedrockCreationSyncLambdaEventRule
+  
+  BedrockAgentHRAssistantRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: !Sub AmazonBedrockExecutionRoleForAgents-rol-${AWS::StackName}
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - bedrock.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+            Condition:
+              StringEquals:
+                "aws:SourceAccount": !Ref AWS::AccountId
+              ArnLike:
+                "aws:SourceArn": !Sub arn:${AWS::Partition}:bedrock:${AWS::Region}:${AWS::AccountId}:agent/*
+      Path: /
+      Policies:
+        - PolicyName: !Sub AmazonBedrockExecutionRoleForAgents-rol-pol-${AWS::StackName}
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "bedrock:ListFoundationModels"
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "bedrock:InvokeModel"
+                Resource:
+                  - !Sub arn:${AWS::Partition}:bedrock:${AWS::Region}::foundation-model/${EmbeddingModelName}
+                  - !Sub arn:${AWS::Partition}:bedrock:${AWS::Region}::foundation-model/${TextModelName}
+              - Effect: Allow
+                Action:
+                  - "bedrock:Retrieve"
+                  - "bedrock:RetrieveAndGenerate"
+                Resource: 
+                  - !GetAtt BedrockKnowledgeBaseWithAoss.KnowledgeBaseArn
+  
+  BedrockAgentHRAssistant:
+      Type: AWS::Bedrock::Agent
+      Properties:
+        AgentName: !Sub HR-Assistant-Agent-${AWS::StackName}
+        AgentResourceRoleArn: !GetAtt BedrockAgentHRAssistantRole.Arn  
+        FoundationModel: !Ref TextModelName
+        Instruction: !Sub |                   
+          You are CompanyXYZ HR Assistant, a specialized AI agent designed to help employees with HR-related inquiries and requests. Your primary data source is the bedrock-kb-${AWS::StackName} knowledge base containing CompanyXYZ HR policies and Employee Handbook.
+          
+          CORE CAPABILITIES:
+          1. Vacation/PTO Balance Inquiry:
+             - Retrieve current vacation leave or PTO balance for any employee
+             - Required parameter: Employee ID
+             - Return: Employee name and current vacation balance
+          
+          2. Employee Information Lookup:
+             - Access comprehensive employee details including personal and job information
+             - Required parameter: Employee ID
+             - Return: Name, email, position, basic pay, organizational unit
+          
+          3. Leave of Absence (LOA) Request Processing:
+             - Submit and process leave requests on behalf of employees
+             - Required parameters: Employee ID, start date, end date, leave type (PTO or Sick)
+             - Return: Request confirmation and status
+          
+          INTERACTION GUIDELINES:
+          - Maintain a professional, helpful, and empathetic tone
+          - Always verify employee identity before providing sensitive information
+          - Don't repeatedly request parameters you already have in the conversation
+          - For company policy questions, always search the knowledge base first
+          - Provide clear, actionable responses with specific details when available
+          - If information is not available, clearly state limitations and suggest alternatives
+          
+          KNOWLEDGE BASE USAGE:
+          - Query the knowledge base for all HR policy, procedure, and handbook questions
+          - Use retrieved information to provide accurate, up-to-date responses
+          - Reference specific policies or sections when applicable
+          
+          RESPONSE FORMAT:
+          - When describing functionality, use natural language without exposing technical function names
+          - Structure responses clearly with bullet points or numbered lists when appropriate
+          - Always confirm successful completion of requests
+          - Provide next steps or additional resources when relevant
+        Description: "HR Assistant Agent"
+        IdleSessionTTLInSeconds: 900
+        KnowledgeBases:
+          - KnowledgeBaseId: !Ref BedrockKnowledgeBaseWithAoss
+            Description: !Sub "Use the information stored in the bedrock-kb-${AWS::StackName} knowledge base to provide accurate answers to employee questions regarding CompanyXYZ policies from the Employee Handbook."
+            KnowledgeBaseState: ENABLED
+        AutoPrepare: true
+        ActionGroups:
+          - ActionGroupName: enable-agent-user-input
+            ActionGroupState: ENABLED
+            ParentActionGroupSignature: AMAZON.UserInput
+          - ActionGroupName: employee-requests-actions
+            Description: "Answer the employee request action"
+            ActionGroupState: ENABLED
+            ActionGroupExecutor:
+              Lambda: !GetAtt BedrockAgentHRAssistantLambdaFunction.Arn
+            ApiSchema:
+              Payload: |
+                  openapi: 3.0.0
+                  info:
+                    title: Employee HR Assistant API
+                    version: 1.0.0
+                    description: API to answer Employee HR related requests.
+                  paths:
+                    /vacation-leave-balance:
+                      get:
+                        summary: Get vacation leave or PTO balance for employee
+                        description: Returns employee vacation leave or PTO balance based on provided employee ID
+                        operationId: getVacationLeaveBalance
+                        parameters:
+                          - name: employeeID
+                            in: query
+                            description: The Employee ID
+                            required: true
+                            schema:
+                              type: string
+                        responses:
+                          "200":
+                            description: Get Employee vacation leave or PTO balance
+                            content:
+                              application/json:
+                                schema:
+                                  type: object
+                                  properties:
+                                    vacationLeaveBalance:
+                                      type: string
+                                      description: Employee vacation leave or PTO balance 
+                    /employee-info:
+                      get:
+                        summary: Retrieve employee information
+                        description: Returns employee details based on provided employee ID
+                        operationId: getInfo
+                        parameters:
+                          - name: employeeID
+                            in: query
+                            description: The Employee ID
+                            required: true
+                            schema:
+                              type: string
+                        responses:
+                          "200":
+                            description: Get Employee requested information details.
+                            content:
+                              application/json:
+                                schema:
+                                  type: object
+                                  properties:
+                                    employeeName:
+                                      type: string
+                                      description: The Employee Name
+                                    employeeEmail:
+                                      type: string
+                                      description: The Employee Email
+                                    employeePosition:
+                                      type: string
+                                      description: The Employee Position
+                                    employeeBasicPay:
+                                      type: string
+                                      description: The Employee Basic Pay
+                                    employeeOU:
+                                      type: string
+                                      description: The Employee Organizational Unit 
+                                    employeeStatus:
+                                      type: string
+                                      description: The Employee Status
+                                    employeeHireDate:
+                                      type: string
+                                      description: The Employee Hire Date
+                                    employeeManagerName:
+                                      type: string
+                                      description: The Employee Manager Name
+                                    employeeManagerEmail:
+                                      type: string
+                                      description: The Employee Manager Email
+                                    vacationLeaveBalance:
+                                      type: string
+                                      description: Employee vacation leave or PTO balance
+                                    vacationSickLeaveBalance:
+                                      type: string
+                                      description: Employee Sick Leave Balance
+                    /leave-of-absence:
+                      post:
+                        summary: Request leave of absence (LOA)
+                        description: Creates LOA request, sends manager approval email, and returns request status
+                        operationId: createLOA
+                        requestBody:
+                          required: true
+                          content:
+                              application/json:
+                                schema:
+                                  type: object
+                                  properties:
+                                    employeeID:
+                                      type: string
+                                      description: The Employee ID
+                                    leaveStartDate:
+                                      type: string
+                                      description: The leave start date in MM/DD/YYYY format
+                                    leaveEndDate:
+                                      type: string
+                                      description: The leave end date in MM/DD/YYYY format
+                                    leaveType:
+                                      type: string
+                                      description: The type of leave whether PTO or sick leave
+                                  required:
+                                    - employeeID
+                                    - leaveStartDate
+                                    - leaveEndDate
+                                    - leaveType
+                        responses:
+                          "200":
+                            description: Leave Of Absence (LOA) request created successfully
+                            content:
+                              application/json:
+                                schema:
+                                  type: object
+                                  properties:
+                                    employeeName:
+                                      type: string
+                                      description: The Employee Name
+                                    employeeEmail:
+                                      type: string
+                                      description: The Employee Email
+                                    employeeLOAStatus:
+                                      type: string
+                                      description: The Employee Leave Of Absence (LOA) Status
+                                    employeeManagerName:
+                                      type: string
+                                      description: The Employee Manager Name
+                                    employeeManagerEmail:
+                                      type: string
+                                      description: The Employee Manager Email
+                                    vacationLeaveBalance:
+                                      type: string
+                                      description: Employee vacation leave or PTO balance
+                                    vacationSickLeaveBalance:
+                                      type: string
+                                      description: Employee Sick Leave Balance
+  BedrockAgentHRAssistantAlias:
+    Type: AWS::Bedrock::AgentAlias
+    Properties:
+      AgentId: !Ref BedrockAgentHRAssistant
+      AgentAliasName: HR-Assistant-Agent-Alias
+      Description: "HR Assistant Agent Alias"
+
+  DynamoDBEmployeeDataTable: 
+    Type: AWS::DynamoDB::Table
+    Properties: 
+      TableName: !Sub employee-info-table-${AWS::StackName}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - 
+          AttributeName: "employeeID"
+          AttributeType: "S"
+      KeySchema: 
+        - 
+          AttributeName: "employeeID"
+          KeyType: "HASH"
+          
+  DynamoDBEmployeeLOATable: 
+    Type: AWS::DynamoDB::Table
+    Properties: 
+      TableName: !Sub employee-loa-table-${AWS::StackName}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - 
+          AttributeName: "employeeID"
+          AttributeType: "S"
+        - 
+          AttributeName: "requestTime"
+          AttributeType: "S"
+      KeySchema: 
+        - 
+          AttributeName: "employeeID"
+          KeyType: "HASH"
+        - 
+          AttributeName: "requestTime"
+          KeyType: "RANGE"
+
+  BedrockAgentHRAssistantLambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Sub bedrock-agent-HR-assistant-lbd-${AWS::StackName}
+      Action: "lambda:InvokeFunction"
+      Principal: "bedrock.amazonaws.com"
+      SourceArn: !GetAtt BedrockAgentHRAssistant.AgentArn
+  BedrockAgentHRAssistantLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub bedrock-agent-HR-assistant-lbd-${AWS::StackName}
+      Description: Lambda Function for Bedrock HR assistant Agent
+      Handler: "index.lambda_handler"
+      Timeout: 900
+      Role: !GetAtt "BedrockAgentHRAssistantLambdaFunctionExecutionRole.Arn"
+      Runtime: python3.13
+      Environment:
+        Variables: 
+          EMPLOYEE_DATA_TABLE_NAME: !Ref DynamoDBEmployeeDataTable
+          EMPLOYEE_LOA_TABLE_NAME: !Ref DynamoDBEmployeeLOATable
+          SOURCE_EMAIL_ADDRESS: !Ref SourceEmailAddress
+          SES_API_ENDPOINT: !Sub https://${SESRestApi}.execute-api.${AWS::Region}.amazonaws.com/DEV
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import boto3
+          import botocore
+          from botocore.exceptions import ClientError
+          import time
+          from datetime import datetime
+          import json
+        
+          dynamodb_client = boto3.client("dynamodb")
+          ses_client = boto3.client("ses")
+
+          employee_data_table_name = os.environ["EMPLOYEE_DATA_TABLE_NAME"]
+          employee_loa_table_name = os.environ["EMPLOYEE_LOA_TABLE_NAME"]
+          source_email_address = os.environ["SOURCE_EMAIL_ADDRESS"]
+          ses_api_endpoint = os.environ["SES_API_ENDPOINT"]
+
+          def get_named_parameter(event, name):
+            return next(item for item in event['parameters'] if item['name'] == name)['value']
+          
+          def get_named_property(event, name):
+            return next(
+                item for item in
+                event['requestBody']['content']['application/json']['properties']
+                if item['name'] == name)['value']
+
+          def lambda_handler(event, context):
+
+              result = ''
+              response_code = 200
+              action_group = event['actionGroup']
+              api_path = event['apiPath']
+
+              print("DEBUG: Lambda event ", str(event))
+              print("DEBUG: Lambda context ", str(context))
+              print ("lambda_handler == > api_path: ",api_path)
+
+              if api_path == '/vacation-leave-balance':
+                employee_id = get_named_parameter(event, "employeeID")
+
+                try:
+                  response = dynamodb_client.get_item(TableName=employee_data_table_name, Key={'employeeID':{'S':str(employee_id)}})
+                  if "Item" in response:
+                    print(json.dumps(response['Item']))
+                    employee_data= response['Item']
+                    result= employee_data["vacationLeaveBalance"]
+                  else:
+                    response_code = 404
+                    result = f"Unrecognized api path: {action_group}::{api_path}"
+                except ClientError as e:
+                    print("Error: %s" % e)
+                    response_code = 404
+                    result = f"Unrecognized api path: {action_group}::{api_path}"
+              
+              elif api_path == '/employee-info':
+                employee_id = get_named_parameter(event, "employeeID")
+
+                try:
+                  response = dynamodb_client.get_item(TableName=employee_data_table_name, Key={'employeeID':{'S':str(employee_id)}})
+                  if "Item" in response:
+                    print(json.dumps(response['Item']))
+                    employee_data= response['Item']
+                    result= f"{employee_data["employeeName"]}, {employee_data["employeeEmail"]}, {employee_data["employeePosition"]}, {employee_data["employeeManagerName"]}, {employee_data["employeeManagerEmail"]}, {employee_data["employeeOU"]}, {employee_data["employeeHireDate"]}, {employee_data["employeeStatus"]}, {employee_data["employeeBasicPay"]}, {employee_data["vacationLeaveBalance"]}, {employee_data["vacationSickLeaveBalance"]}"
+                  else:
+                    response_code = 404
+                    result = f"Unrecognized api path: {action_group}::{api_path}"
+                except ClientError as e:
+                    print("Error: %s" % e)
+                    response_code = 404
+                    result = f"Unrecognized api path: {action_group}::{api_path}"
+              
+              elif api_path == '/leave-of-absence':
+                employee_id = get_named_property(event, "employeeID")
+                employee_leave_start_date = get_named_property(event, "leaveStartDate")
+                employee_leave_end_date = get_named_property(event, "leaveEndDate")
+                employee_leave_type = get_named_property(event, "leaveType")
+                # employee_leave_description = get_named_property(event, "leaveDescription")
+               
+                try:
+                  get_item_response = dynamodb_client.get_item(TableName=employee_data_table_name, Key={'employeeID':{'S':str(employee_id)}})
+                  employee_data= get_item_response['Item']
+                  employee_name= employee_data["employeeName"]
+                  employee_email= employee_data["employeeEmail"]
+                  employee_manager_name= employee_data["employeeManagerName"]
+                  employee_manager_email= employee_data["employeeManagerEmail"]
+                  
+                  loa_request_time = int(time.time())
+                  date_format = "%m/%d/%Y"
+                  loa_duration = datetime.strptime(str(employee_leave_end_date), date_format) - datetime.strptime(str(employee_leave_start_date), date_format)
+
+                  loa_request_item = {
+                    'employeeID': {"S": str(employee_id)},
+                    'requestTime': {"S": str(loa_request_time)},
+                    'leaveStartDate': {"S": str(employee_leave_start_date)},
+                    'leaveEndDate': {"S": str(employee_leave_end_date)},
+                    'leaveType': {"S": str(employee_leave_type)},
+                    # 'leaveDescription': {"S": str(employee_leave_description)},
+                    'requestStatus': {"S": "REQUEST_SENT_FOR_APPROVAL"}
+                  }
+
+                  put_item_response = dynamodb_client.put_item(
+                    TableName=employee_loa_table_name,
+                    Item=loa_request_item
+                  )
+
+                  ## Amazon SES Email Configuration
+                  # "From" address
+                  SENDER = source_email_address
+                  # "To" address
+                  RECIPIENT = employee_manager_email['S']
+                  # The subject line for the email.
+                  SUBJECT = "A Task Awaits You: Leave Of Absense Request"
+                  ACCEPT_URL= f"{ses_api_endpoint}/?action=ACCEPT&employeeID={employee_id}&leaveStartDate={employee_leave_start_date}&leaveEndDate={employee_leave_end_date}&leaveType={employee_leave_type}"
+                  REJECT_URL= f"{ses_api_endpoint}/?action=REJECT&employeeID={employee_id}&leaveStartDate={employee_leave_start_date}&leaveEndDate={employee_leave_end_date}&leaveType={employee_leave_type}"
+                  # The email body for recipients with non-HTML email clients.
+                  BODY_TEXT = (f"Hi {employee_manager_name['S']},\r\n"
+                              "Please log into the HR system to complete this action:\r\n"
+                              "Business Process: Absence Request\r\n"
+                              f"Employee Name: {employee_name['S']}\r\n"
+                              f"Employee ID: {employee_id}\r\n"
+                              f"Start Date: {employee_leave_start_date}\r\n"
+                              f"End Date: {employee_leave_end_date}\r\n"
+                              f"Reason: {employee_leave_type}\r\n"
+                              f"To Accept this request, click on this link: {ACCEPT_URL} \r\n"
+                              f"To Deny this request, click on this link: {REJECT_URL}"
+                              )
+                  # The HTML body of the email.
+                  BODY_HTML = f"""<html>
+                                    <head></head>
+                                    <body>
+                                      <p>
+                                        Hi <b>{employee_manager_name['S']}</b>, <br>
+                                        Please log into the HR system to complete this action: <br>
+                                        <b>Business Process</b>: Absence Request <br>
+                                        <b>Employee Name</b>: {employee_name['S']} <br>
+                                        <b>Employee ID</b>: {employee_id} <br>
+                                        <b>Start Date</b>: {employee_leave_start_date} <br>
+                                        <b>End Date</b>: {employee_leave_end_date} <br>
+                                        <b>Reason</b>: {employee_leave_type} <br> <br>
+                                        <b><a href={ACCEPT_URL}>ACCEPT</a></b> | <b><a href={REJECT_URL}>REJECT</a></b> 
+                                      </p>
+                                    </body>
+                                  </html>
+                              """  
+                  # The character encoding for the email
+                  CHARSET = "UTF-8"  
+
+                  # Provide the contents of the email
+                  ses_client_send_email_response = ses_client.send_email(
+                      Destination={
+                          'ToAddresses': [
+                              RECIPIENT
+                          ]
+                      },
+                      Message={
+                          'Body': {
+                              'Html': {
+                                  'Charset': CHARSET,
+                                  'Data': BODY_HTML,
+                              },
+                              'Text': {
+                                  'Charset': CHARSET,
+                                  'Data': BODY_TEXT,
+                              },
+                          },
+                          'Subject': {
+                              'Charset': CHARSET,
+                              'Data': SUBJECT,
+                          },
+                      },
+                      Source=SENDER
+                  )
+
+                  result = f"Your request of {loa_duration.days} days has been created and sent to your manager {employee_manager_name} for approval. You will receive and email accordingly."
+
+                except ClientError as e:
+                    print("Error: %s" % e)
+                    response_code = 404
+                    result = f"Unrecognized api path: {action_group}::{api_path}"
+          
+              else:
+                response_code = 404
+                result = f"Unrecognized api path: {action_group}::{api_path}"
+              
+              response_body = {
+                'application/json': {
+                    'body': json.dumps(result)
+                }
+              }
+              action_response = {
+                'actionGroup': event['actionGroup'],
+                'apiPath': event['apiPath'],
+                'httpMethod': event['httpMethod'],
+                'httpStatusCode': response_code,
+                'responseBody': response_body
+              }
+              api_response = {'messageVersion': '1.0', 'response': action_response}
+              return api_response
+
+  BedrockAgentHRAssistantLambdaFunctionExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: !Sub bedrock-agent-HR-assistant-lbd-rol-${AWS::StackName}
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Path: /
+      Policies:
+        - PolicyName: !Sub bedrock-agent-HR-assistant-lbd-rol-pol-${AWS::StackName}
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: !GetAtt BedrockAgentHRAssistantLambdaFunctionCloudWatchLogGroup.Arn
+              - Effect: Allow
+                Action:
+                  - "dynamodb:GetItem"
+                  - "dynamodb:PutItem"
+                Resource:
+                  - !GetAtt DynamoDBEmployeeDataTable.Arn
+                  - !GetAtt DynamoDBEmployeeLOATable.Arn
+              - Effect: Allow
+                Action:
+                  - "ses:SendEmail"
+                Resource: "*"
+
+  BedrockAgentHRAssistantLambdaFunctionCloudWatchLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/bedrock-agent-HR-assistant-lbd-${AWS::StackName}
+      RetentionInDays: 1
+
+## Knowledge Base Sync ###
+
+## Ongoing Sync ##
+  BedrockOngoingSyncLambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Fn::GetAtt:
+          - BedrockOngoingSyncLambdaFunction
+          - Arn
+      Action: "lambda:InvokeFunction"
+      Principal: "s3.amazonaws.com"
+      SourceArn: !GetAtt BedrockDataSourceS3Bucket.Arn
+
+  BedrockOngoingSyncLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub bedrock-ongoing-sync-lbd-${AWS::StackName}
+      Description: Lambda Function for Knowledge Base to sync the data from the Amazon S3 bucket
+      Handler: "index.lambda_handler"
+      Timeout: 900
+      Role: !GetAtt "BedrockOngoingSyncLambdaFunctionExecutionRole.Arn"
+      Runtime: python3.13
+      Environment:
+        Variables: ## We will use the name instead of the ID to avoid circular dependency
+          BEDROCK_KNOWLEDGE_BASE_NAME: !Sub bedrock-kb-${AWS::StackName}
+          BEDROCK_DATA_SOURCE_NAME: !Sub bedrock-kb-data-source-${AWS::StackName}
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import boto3
+          import botocore
+          from botocore.exceptions import ClientError
+        
+          bedrock_client = boto3.client('bedrock-agent')
+
+          bedrock_knowledge_base_name = os.environ["BEDROCK_KNOWLEDGE_BASE_NAME"]
+          bedrock_data_source_name = os.environ["BEDROCK_DATA_SOURCE_NAME"]
+          bedrock_knowledge_base_id = ""
+          bedrock_data_source_id = ""
+
+          def lambda_handler(event, context):
+              try:
+                bedrock_client_list_knowledge_bases_response = bedrock_client.list_knowledge_bases()
+                if "knowledgeBaseSummaries" in bedrock_client_list_knowledge_bases_response:
+                  for kb in bedrock_client_list_knowledge_bases_response["knowledgeBaseSummaries"]:
+                    if kb["name"] == bedrock_knowledge_base_name:
+                      bedrock_knowledge_base_id = kb["knowledgeBaseId"]
+                      bedrock_client_list_data_sources_response = bedrock_client.list_data_sources(
+                          knowledgeBaseId=bedrock_knowledge_base_id
+                      )
+                      if "dataSourceSummaries" in bedrock_client_list_data_sources_response:
+                        for ds in bedrock_client_list_data_sources_response["dataSourceSummaries"]:
+                          if ds["name"] == bedrock_data_source_name:
+                            bedrock_data_source_id = ds["dataSourceId"]
+                            bedrock_client_start_ingestion_job_response = bedrock_client.start_ingestion_job(
+                                knowledgeBaseId=bedrock_knowledge_base_id,
+                                dataSourceId=bedrock_data_source_id
+                            )
+                            print("Ingestion Job Response: ", bedrock_client_start_ingestion_job_response)
+                            break
+                      break
+              except ClientError as e:
+                if e.response['Error']['Code'] == 'ConflictException':
+                    print("There is an ongoing ingestion job for this knowledge base with ID: ", bedrock_knowledge_base_id)
+                else:
+                  print("Error: %s" % e)
+            
+  BedrockOngoingSyncLambdaFunctionExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: !Sub bedrock-ongoing-sync-lbd-rol-${AWS::StackName}
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Path: /
+      Policies:
+        - PolicyName: !Sub bedrock-ongoing-sync-lbd-rol-pol-${AWS::StackName}
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: !GetAtt BedrockOngoingSyncLambdaFunctionCloudWatchLogGroup.Arn
+              - Effect: Allow
+                Action:
+                  - "bedrock:StartIngestionJob"
+                  - "bedrock:ListKnowledgeBases"
+                  - "bedrock:ListDataSources"
+                Resource: "*"
+
+  BedrockOngoingSyncLambdaFunctionCloudWatchLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/bedrock-ongoing-sync-lbd-${AWS::StackName}
+      RetentionInDays: 1
+  
+## At Creation Or Update Sync ##
+
+  BedrockCreationSyncLambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Fn::GetAtt:
+          - BedrockCreationSyncLambdaFunction
+          - Arn
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn:
+        Fn::GetAtt:
+          - "BedrockCreationSyncLambdaEventRule"
+          - "Arn"
+
+  BedrockCreationSyncLambdaEventRule:
+    Type: "AWS::Events::Rule"
+    Properties:
+      Description: A trigger for the Lambda sync function at data source creation or update
+      EventPattern: 
+        source: 
+          - aws.cloudformation
+        detail-type: 
+          - "CloudFormation Resource Status Change"
+        detail: 
+          stack-id: 
+            - !Sub ${AWS::StackId}
+          resource-type: 
+            - AWS::Bedrock::DataSource
+          status-details:
+            status: 
+              - CREATE_COMPLETE
+              - UPDATE_COMPLETE
+      State: ENABLED
+      Targets:
+        - Arn: !Sub ${BedrockCreationSyncLambdaFunction.Arn}
+          Id: LambdaCreationSyncEventRuleTrigger
+  
+  BedrockCreationSyncLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub bedrock-creation-sync-lbd-${AWS::StackName}
+      Description: Lambda Function for Knowledge Base to sync the data from the Amazon S3 bucket at creation
+      Handler: "index.lambda_handler"
+      Timeout: 900
+      Role: !GetAtt "BedrockCreationSyncLambdaFunctionExecutionRole.Arn"
+      Runtime: python3.13
+      Environment:
+        Variables:
+          BEDROCK_DATA_SOURCE_S3_BUCKET_NAME: !Ref BedrockDataSourceS3Bucket
+          BEDROCK_ONGOING_SYNC_LAMBDA_FUNCTION_ARN: !GetAtt BedrockOngoingSyncLambdaFunction.Arn 
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import boto3
+          import botocore
+          from botocore.exceptions import ClientError
+        
+          bedrock_client = boto3.client('bedrock-agent')
+          s3_client = boto3.client('s3')
+
+          bedrock_data_source_s3_bucket_name = os.environ["BEDROCK_DATA_SOURCE_S3_BUCKET_NAME"]
+          bedrock_ongoing_sync_lambda_function_arn = os.environ["BEDROCK_ONGOING_SYNC_LAMBDA_FUNCTION_ARN"]
+
+          def lambda_handler(event, context):
+              bedrock_knowledge_base_id = event["detail"]["physical-resource-id"].split("|")[0]
+              bedrock_data_source_id = event["detail"]["physical-resource-id"].split("|")[1]
+
+              ## Add S3 triggers to call Bedrock Sync Lambda function when there is a change in the S3 bucket 
+              ## This will be added at first during the data source stack resource first creation 
+              ## It will provide continious sync
+              try:
+                s3_client_get_bucket_notification_configuration_response = s3_client.get_bucket_notification_configuration(
+                    Bucket=bedrock_data_source_s3_bucket_name
+                )
+                if "LambdaFunctionConfigurations" not in s3_client_get_bucket_notification_configuration_response:
+                  try:
+                    s3_client_put_bucket_notification_configuration_response = s3_client.put_bucket_notification_configuration(
+                      Bucket=bedrock_data_source_s3_bucket_name,
+                      NotificationConfiguration={
+                        "LambdaFunctionConfigurations": [
+                          {
+                            "LambdaFunctionArn": bedrock_ongoing_sync_lambda_function_arn,
+                            "Events": [
+                              "s3:ObjectCreated:*",
+                              "s3:ObjectRemoved:*"
+                            ]
+                          }
+                        ]
+                      }
+                    )
+                    print(s3_client_put_bucket_notification_configuration_response)
+                  except ClientError as e:
+                    print("Error: %s" % e)
+              except ClientError as e:
+                print("Error: %s" % e)
+              
+              try:
+                bedrock_client_start_ingestion_job_response = bedrock_client.start_ingestion_job(
+                    knowledgeBaseId=bedrock_knowledge_base_id,
+                    dataSourceId=bedrock_data_source_id
+                )
+                print('Ingestion Job Response: ', bedrock_client_start_ingestion_job_response)
+              except ClientError as e:
+                if e.response['Error']['Code'] == 'ConflictException':
+                    print("There is an ongoing ingestion job for this knowledge base with ID: ", bedrock_knowledge_base_id)
+                else:
+                  print("Error: %s" % e)
+
+  BedrockCreationSyncLambdaFunctionExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: !Sub bedrock-creation-sync-lbd-rol-${AWS::StackName}
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Path: /
+      Policies:
+        - PolicyName: !Sub bedrock-creation-sync-lbd-rol-pol-${AWS::StackName}
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: !GetAtt BedrockCreationSyncLambdaFunctionCloudWatchLogGroup.Arn
+              - Effect: Allow
+                Action:
+                  - "bedrock:StartIngestionJob"
+                Resource: 
+                  - !GetAtt BedrockKnowledgeBaseWithAoss.KnowledgeBaseArn
+              - Effect: Allow
+                Action:
+                  - "s3:ListBucket"
+                  - "s3:GetBucketNotification"
+                  - "s3:PutBucketNotificationConfiguration"
+                  - s3:*
+                Resource: 
+                  - !Join ['',['arn:', !Ref AWS::Partition, ':s3:::', !Ref BedrockDataSourceS3Bucket]]
+
+  BedrockCreationSyncLambdaFunctionCloudWatchLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/bedrock-creation-sync-lbd-${AWS::StackName}
+      RetentionInDays: 1
+
+## Bedrock Lambda Function ###
+
+  BedrockAPILambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt BedrockAPILambdaFunction.Arn
+      Action: "lambda:InvokeFunction"
+      Principal: "apigateway.amazonaws.com"
+      SourceArn: !Join ['',['arn:', !Ref AWS::Partition, ':execute-api:', !Ref AWS::Region, ':', !Ref AWS::AccountId, ':', !Ref BedrockRestApi, '/*/*/*']]
+
+  BedrockAPILambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub bedrock-api-lbd-${AWS::StackName}
+      Handler: "index.lambda_handler"
+      Timeout: 900
+      Role: !GetAtt "BedrockAPILambdaFunctionExecutionRole.Arn"
+      Runtime: python3.13
+      Environment:
+        Variables:
+          BEDROCK_AGENT_ALIAS: !Ref BedrockAgentHRAssistantAlias
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import sys
+          import boto3
+          import botocore
+          from datetime import datetime
+        
+          bedrock_agent_runtime_client = boto3.client('bedrock-agent-runtime')
+          bedrock_agent_id = os.environ["BEDROCK_AGENT_ALIAS"].split("|")[0]
+          bedrock_agent_alias_id =os.environ["BEDROCK_AGENT_ALIAS"].split("|")[1]
+
+          class DateTimeEncoder(json.JSONEncoder):
+              def default(self, obj):
+                  if isinstance(obj, datetime):
+                      return obj.isoformat()
+                  return super().default(obj)
+
+          def lambda_handler(event, context):
+    
+            # Store the user prompt
+            user_prompt=event['queryStringParameters']['prompt']
+            user_session_id=event['queryStringParameters']['session_id'] ## We are using the User IP temporarily
+           
+            # invoke the agent API
+            invoke_agent_response = bedrock_agent_runtime_client.invoke_agent(
+                inputText=user_prompt,
+                agentId=bedrock_agent_id,
+                agentAliasId=bedrock_agent_alias_id, 
+                sessionId=user_session_id, # Use the same value across requests to continue the same conversation.
+                enableTrace=True, 
+                endSession= False
+            )
+
+            event_stream = invoke_agent_response['completion']
+            agent_answer=""
+            try:
+              for event in event_stream:        
+                if 'chunk' in event:
+                    data = event['chunk']['bytes']
+                    agent_answer = data.decode('utf8')
+                    end_event_received = True
+                    # End event indicates that the request finished successfully
+                elif 'trace' in event:
+                    print(json.dumps(event['trace'], indent=2, cls=DateTimeEncoder))
+                else:
+                    raise Exception("unexpected event.", event)
+            except Exception as e:
+                raise Exception("unexpected event.", e)
+
+            return {
+              "statusCode": 200,
+              "headers": {
+                  "Access-Control-Allow-Credentials": True,
+                  "Access-Control-Allow-Origin": "*"
+              },
+              'body': json.dumps(agent_answer)
+            }
+
+  BedrockAPILambdaFunctionExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: !Sub bedrock-api-lbd-rol-${AWS::StackName}
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Path: /
+      Policies:
+        - PolicyName: !Sub bedrock-api-lbd-rol-pol-${AWS::StackName}
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: !GetAtt BedrockAPILambdaFunctionCloudWatchLogGroup.Arn
+              - Effect: Allow
+                Action:
+                  - "bedrock:RetrieveAndGenerate"
+                  - "bedrock:Retrieve"
+                  - "bedrock:InvokeModel"
+                  - "bedrock:InvokeAgent"
+                Resource: "*"
+
+  BedrockAPILambdaFunctionCloudWatchLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/bedrock-api-lbd-${AWS::StackName}
+      RetentionInDays: 1
+
+## SES Lambda Function ###
+
+  SESAPILambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt SESAPILambdaFunction.Arn
+      Action: "lambda:InvokeFunction"
+      Principal: "apigateway.amazonaws.com"
+      SourceArn: !Join ['',['arn:', !Ref AWS::Partition, ':execute-api:', !Ref AWS::Region, ':', !Ref AWS::AccountId, ':', !Ref SESRestApi, '/*/*/*']]
+
+  SESAPILambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ses-api-lbd-${AWS::StackName}
+      Handler: "index.lambda_handler"
+      Timeout: 900
+      Role: !GetAtt "SESAPILambdaFunctionExecutionRole.Arn"
+      Runtime: python3.13
+      Environment:
+        Variables: 
+          EMPLOYEE_DATA_TABLE_NAME: !Ref DynamoDBEmployeeDataTable
+          EMPLOYEE_LOA_TABLE_NAME: !Ref DynamoDBEmployeeLOATable
+          SOURCE_EMAIL_ADDRESS: !Ref SourceEmailAddress
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import boto3
+          import time
+          from datetime import datetime
+
+          dynamodb = boto3.client("dynamodb")
+          ses = boto3.client("ses")
+
+          EMPLOYEE_TABLE = os.environ["EMPLOYEE_DATA_TABLE_NAME"]
+          LOA_TABLE = os.environ["EMPLOYEE_LOA_TABLE_NAME"]
+          SOURCE_EMAIL = os.environ["SOURCE_EMAIL_ADDRESS"]
+
+          def get_employee_data(employee_id):
+              try:
+                  response = dynamodb.get_item(
+                      TableName=EMPLOYEE_TABLE,
+                      Key={'employeeID': {'S': employee_id}}
+                  )
+                  if 'Item' not in response:
+                      return None
+                  
+                  item = response['Item']
+                  return {
+                      'pto_balance': int(item['vacationLeaveBalance']['S']),
+                      'sick_balance': int(item['vacationSickLeaveBalance']['S']),
+                      'email': item['employeeEmail']['S'],
+                      'name': item['employeeName']['S']
+                  }
+              except Exception as e:
+                  print(f"Error getting employee data: {e}")
+                  return None
+
+          def calculate_leave_days(start_date, end_date):
+              return (datetime.strptime(end_date, "%m/%d/%Y") - 
+                     datetime.strptime(start_date, "%m/%d/%Y")).days
+
+          def update_balances(employee_id, leave_type, days, current_pto, current_sick):
+              if "sick" in leave_type.lower():
+                  new_pto, new_sick = current_pto, current_sick - days
+              else:  # PTO or default
+                  new_pto, new_sick = current_pto - days, current_sick
+              
+              dynamodb.update_item(
+                  TableName=EMPLOYEE_TABLE,
+                  Key={'employeeID': {'S': employee_id}},
+                  UpdateExpression="SET vacationLeaveBalance = :pto, vacationSickLeaveBalance = :sick",
+                  ExpressionAttributeValues={
+                      ":pto": {"S": str(new_pto)},
+                      ":sick": {"S": str(new_sick)}
+                  }
+              )
+
+          def send_notification(recipient, employee_name, action, leave_type, start_date):
+              subject = f"Your leave request has been {action}ED."
+              
+              if action == "ACCEPT":
+                  details = f"{leave_type} leave request effective on {start_date}."
+              else:
+                  details = f"{leave_type} leave request {action}ED."
+              
+              body_text = f"""Hi {employee_name},
+              Please log into the HR system to view the details of your leave request:
+              
+              Business Process: Absence Request for {employee_name}
+              Status: {action}ED
+              Details: {details}"""
+              
+              body_html = f"""<html><body><p>
+              Hi <b>{employee_name}</b>,<br>
+              Please log into the HR system to view the details of your leave request:<br><br>
+              <b>Business Process</b>: Absence Request for {employee_name}<br>
+              <b>Status</b>: {action}ED<br>
+              <b>Details</b>: {details}
+              </p></body></html>"""
+              
+              ses.send_email(
+                  Source=SOURCE_EMAIL,
+                  Destination={'ToAddresses': [recipient]},
+                  Message={
+                      'Subject': {'Data': subject, 'Charset': 'UTF-8'},
+                      'Body': {
+                          'Text': {'Data': body_text, 'Charset': 'UTF-8'},
+                          'Html': {'Data': body_html, 'Charset': 'UTF-8'}
+                      }
+                  }
+              )
+              return details
+
+          def lambda_handler(event, context):
+              try:
+                  params = event['queryStringParameters']
+                  employee_id = params['employeeID']
+                  start_date = params['leaveStartDate']
+                  end_date = params['leaveEndDate']
+                  leave_type = params['leaveType']
+                  action = params['action']
+                  
+                  employee = get_employee_data(employee_id)
+                  if not employee:
+                      return {
+                          "statusCode": 404,
+                          "body": json.dumps("Employee not found")
+                      }
+                  
+                  # Update balances only for accepted requests
+                  if action == "ACCEPT":
+                      days = calculate_leave_days(start_date, end_date)
+                      update_balances(employee_id, leave_type, days, 
+                                    employee['pto_balance'], employee['sick_balance'])
+                  
+                  # Log request status
+                  dynamodb.put_item(
+                      TableName=LOA_TABLE,
+                      Item={
+                          'employeeID': {'S': employee_id},
+                          'requestTime': {'S': str(int(time.time()))},
+                          'leaveStartDate': {'S': start_date},
+                          'leaveEndDate': {'S': end_date},
+                          'leaveType': {'S': leave_type},
+                          'requestStatus': {'S': f"{action}ED"}
+                      }
+                  )
+                  
+                  # Send notification
+                  details = send_notification(employee['email'], employee['name'], 
+                                            action, leave_type, start_date)
+                  
+                  return {
+                      "statusCode": 200,
+                      "headers": {
+                          "Access-Control-Allow-Credentials": True,
+                          "Access-Control-Allow-Origin": "*"
+                      },
+                      "body": json.dumps(details)
+                  }
+                  
+              except Exception as e:
+                  print(f"Error: {e}")
+                  return {
+                      "statusCode": 500,
+                      "body": json.dumps("Internal server error")
+                  }
+
+  SESAPILambdaFunctionExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: !Sub ses-api-lbd-rol-${AWS::StackName}
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Path: /
+      Policies:
+        - PolicyName: !Sub ses-api-lbd-rol-pol-${AWS::StackName}
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: !GetAtt SESAPILambdaFunctionCloudWatchLogGroup.Arn
+              - Effect: Allow
+                Action:
+                  - "dynamodb:GetItem"
+                  - "dynamodb:PutItem"
+                  - "dynamodb:UpdateItem"
+                Resource:
+                  - !GetAtt DynamoDBEmployeeDataTable.Arn
+                  - !GetAtt DynamoDBEmployeeLOATable.Arn
+              - Effect: Allow
+                Action:
+                  - "ses:SendEmail"
+                Resource: "*"
+
+  SESAPILambdaFunctionCloudWatchLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/ses-api-lbd-${AWS::StackName}
+      RetentionInDays: 1
+
+### API Gateway ###
+
+  ## LOA Requests ##
+
+  SESRestApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Sub apigw-ses-${AWS::StackName}
+      Description: SES API Gateway
+  
+  SESAPIMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref SESRestApi
+      ResourceId: !GetAtt SESRestApi.RootResourceId
+      AuthorizationType: NONE
+      HttpMethod: GET
+      RequestModels:
+        "application/json": "Empty"
+      MethodResponses:
+        - StatusCode: "200"
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: "True"
+            method.response.header.Access-Control-Allow-Methods: "True"
+            method.response.header.Access-Control-Allow-Origin: "True"
+          ResponseModels:
+            "application/json": "Empty"
+      Integration:
+        ContentHandling: CONVERT_TO_TEXT
+        PassthroughBehavior: WHEN_NO_MATCH
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY        
+        RequestTemplates:
+          "application/json": "Empty"
+        Uri: !Join
+          - ""
+          - - "arn:"
+            - !Ref "AWS::Partition"
+            - ":apigateway:"
+            - !Ref "AWS::Region"
+            - :lambda:path/2015-03-31/functions/
+            - !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${SESAPILambdaFunction}"
+            - /invocations
+        IntegrationResponses:
+          - StatusCode: "200"
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'*'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: ""
+
+  SESAPIDevDeployment:
+    Type: AWS::ApiGateway::Deployment
+    Properties:
+      RestApiId: !Ref SESRestApi
+      StageName: DEV
+      Description: SES DEV API GATEWAY Deployment
+    DependsOn:
+      - SESAPIMethod
+
+  ## Bedrock Requests ##
+
+  BedrockRestApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Sub apigw-bedrock-${AWS::StackName}
+      Description: Bedrock API Gateway
+  
+  BedrockAPIMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref BedrockRestApi
+      ResourceId: !GetAtt BedrockRestApi.RootResourceId
+      AuthorizationType: NONE
+      HttpMethod: GET
+      RequestModels:
+        "application/json": "Empty"
+      MethodResponses:
+        - StatusCode: "200"
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: "True"
+            method.response.header.Access-Control-Allow-Methods: "True"
+            method.response.header.Access-Control-Allow-Origin: "True"
+          ResponseModels:
+            "application/json": "Empty"
+      Integration:
+        ContentHandling: CONVERT_TO_TEXT
+        PassthroughBehavior: WHEN_NO_MATCH
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY        
+        RequestTemplates:
+          "application/json": "Empty"
+        Uri: !Join
+          - ""
+          - - "arn:"
+            - !Ref "AWS::Partition"
+            - ":apigateway:"
+            - !Ref "AWS::Region"
+            - :lambda:path/2015-03-31/functions/
+            - !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${BedrockAPILambdaFunction}"
+            - /invocations
+        IntegrationResponses:
+          - StatusCode: "200"
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'*'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: ""
+
+  BedrockAPIDevDeployment:
+    Type: AWS::ApiGateway::Deployment
+    Properties:
+      RestApiId: !Ref BedrockRestApi
+      StageName: DEV
+      Description: Bedrock DEV API GATEWAY Deployment
+    DependsOn:
+      - BedrockAPIMethod
+
+### StreamLit WebApp Infrastructure ###
+  #### VPC & Subnets ##
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      Tags:
+        - Key: Name
+          Value: !Sub WebAppVPC-${AWS::StackName}
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub IGW-${AWS::StackName}
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: PublicSubnetAZ1
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      CidrBlock: 10.0.2.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: PublicSubnetAZ2
+
+  WebAppPrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      CidrBlock: 10.0.3.0/24
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: "WebAppPrivateSubnetAZ1"
+
+  WebAppPrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      CidrBlock: 10.0.4.0/24
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: "WebAppPrivateSubnetAZ2"
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: PublicRTB
+
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet1
+
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet2
+
+  PrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: PrivateRTBAZ1
+  
+  PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: PrivateRTBAZ2
+
+  WebAppPrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      SubnetId: !Ref WebAppPrivateSubnet1
+
+  WebAppPrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      SubnetId: !Ref WebAppPrivateSubnet2
+  
+
+  NatGateway1EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: EIP1
+
+  NatGateway2EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: EIP2
+
+  NatGateway1:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGateway1EIP.AllocationId
+      SubnetId: !Ref PublicSubnet1
+      Tags:
+        - Key: Name
+          Value: NATGW1
+
+  NatGateway2:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGateway2EIP.AllocationId
+      SubnetId: !Ref PublicSubnet2
+      Tags:
+        - Key: Name
+          Value: NATGW2
+
+
+  DefaultPrivateRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway1
+  
+  DefaultPrivateRoute2:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway2
+  
+
+  WebAppSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub SG-Web-App-${AWS::StackName}
+      GroupDescription: "Security group for WebApp"
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !GetAtt ALBSecurityGroup.GroupId
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          SourceSecurityGroupId: !GetAtt ALBSecurityGroup.GroupId
+        - IpProtocol: tcp
+          FromPort: 8501
+          ToPort: 8501
+          SourceSecurityGroupId: !GetAtt ALBSecurityGroup.GroupId
+      SecurityGroupEgress:
+        - IpProtocol: "-1"
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub SG-Web-App-${AWS::StackName}
+
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub SG-ALB-${AWS::StackName}
+      GroupDescription: "Security group for ALB"
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub SG-ALB-${AWS::StackName}
+
+
+## ASG ###
+
+# Streamlit WebApp ###
+
+  WebAppEC2KeyPair:
+    Type: AWS::EC2::KeyPair
+    Properties:
+      KeyName: !Sub WebAppKeyPair-${AWS::StackName}
+  
+  WebAppASGLaunchConfigInstanceProfileRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: !Sub webapp-instance-profile-rol-${AWS::StackName}
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Policies:
+        - PolicyName: !Sub webapp-instance-profile-rol-pol-${AWS::StackName}
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "cloudformation:SignalResource"
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "s3:ListBucket"
+                  - "s3:PutObject"
+                  - "s3:PutObjectACL"
+                Resource: 
+                  - !Join ['',['arn:', !Ref AWS::Partition, ':s3:::', !Ref BedrockDataSourceS3Bucket]]
+                  - !Join ['',['arn:', !Ref AWS::Partition, ':s3:::', !Ref BedrockDataSourceS3Bucket, '/*']]
+
+  WebAppASGLaunchConfigInstanceProfile: 
+    Type: "AWS::IAM::InstanceProfile"
+    Properties: 
+      InstanceProfileName: !Sub webapp-instance-profile-${AWS::StackName}
+      Path: "/"
+      Roles: 
+        - Ref: WebAppASGLaunchConfigInstanceProfileRole
+
+  WebAppASGLaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      IamInstanceProfile: !GetAtt WebAppASGLaunchConfigInstanceProfile.Arn
+      ImageId: !FindInMap
+        - RegionMap
+        - !Ref 'AWS::Region'
+        - HVM64
+      SecurityGroups:
+        - !Ref WebAppSecurityGroup
+      InstanceType: t2.nano
+      UserData: 
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          yum update -y aws-cfn-bootstrap
+          yum install -y pip
+          pip install boto3
+          yum remove -y python3-requests
+          pip install streamlit
+          pip install streamlit-authenticator
+          pip install streamlit-chat
+          yum install -y python3-requests
+
+          mkdir /tmp/streamlit-cfn-webapp
+          mkdir /tmp/streamlit-cfn-webapp/pages
+
+          # WARNING: This is only for POC/demo purposes
+          # For production environments, credentials should be stored securely using for example:
+          # - AWS Secrets Manager
+          # - AWS Systems Manager Parameter Store 
+          # - OAuth/OIDC integration
+
+          cat > /tmp/streamlit-cfn-webapp/auth_config.yaml << EOF
+
+          credentials:
+            usernames:
+              hr.assistant@poc.user:
+                email: hr.assistant@poc.user
+                name: HR Assistant POC User
+                # To hash a password using streamlit-authenticator, use:
+                # import streamlit_authenticator as stauth
+                # hashed_pwd = stauth.Hasher.hash(['hr.assistant@poc.user.2025'])
+                # This will output the hashed password: $2b$12$U03Hw/vG6KVOtvi1ZWVzH.u05b6ytlqztbESPSDCHXmoJmD9STvNa
+                password: '\$2b\$12\$U03Hw/vG6KVOtvi1ZWVzH.u05b6ytlqztbESPSDCHXmoJmD9STvNa'
+          cookie:
+            expiry_days: 1
+            key: "hr_assistant_poc_user_auth" 
+            name: "hr_assistant_poc_user_auth" 
+
+          EOF
+
+          cat > /tmp/streamlit-cfn-webapp/pages/upload_documents.py << EOF
+
+          import boto3
+          import datetime
+          import time
+          import streamlit as st
+          import streamlit_authenticator as stauth
+          from streamlit_authenticator.utilities.hasher import Hasher
+          import yaml
+          from yaml.loader import SafeLoader
+      
+          file_name = ""
+          s3_client = boto3.client("s3", region_name="${AWS::Region}") 
+                   
+          with open("/tmp/streamlit-cfn-webapp/auth_config.yaml") as file:
+              config = yaml.load(file, Loader=SafeLoader)
+              
+          authenticator = stauth.Authenticate(
+              config['credentials'],
+              config['cookie']['name'],
+              config['cookie']['key'],
+              config['cookie']['expiry_days']
+          )
+
+          login_result = authenticator.login('main', fields={"Form name": "Login"}) or (None, None, None)
+          name, authentication_status, username = login_result
+
+          if st.session_state["authentication_status"]:
+
+              def process_file(document):
+                  name = document.name.split('.')[0]
+                  extension = document.name.split('.')[1]
+                  timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                  file_name = f"{name}_{timestamp}.{extension}"
+                  # st.write(file_name)
+                  return file_name
+
+              def upload_file(file_name, renamed_file_name):
+                  bucket_name = "${BedrockDataSourceS3Bucket}"
+                  try:
+                      # Upload file to an S3 object from the specified local path
+                      s3_client.upload_file(file_name, bucket_name, renamed_file_name)
+                      # st.markdown(f"Object '{file_name}' uploaded to bucket '{bucket_name}'")
+                      st.markdown(f"Successfully uploaded the file to the S3 Bucket", unsafe_allow_html=True)
+                  except Exception as e:
+                      st.markdown(f"Error: {str(e)}")
+
+              list_documents = st.file_uploader(label="Upload Documents to the S3 Bucket", 
+                                                type=["pdf", "txt", "md", "html", "doc", "docx", "csv", "xls", "xlsx"],
+                                                accept_multiple_files=True
+                                              )  
+              if list_documents is not None:         
+                if len(list_documents) > 0:
+                  progress_text = "Files upload in progress..."
+                  progress_bar = st.progress(0, text=progress_text)
+                  for document in list_documents:
+                    with open(document.name, 'wb') as f:
+                      f.write(document.getbuffer())
+                    modifed_file_name = process_file(document)
+                    upload_file(document.name, modifed_file_name)
+                    time.sleep(0.01)
+                    progress_bar.progress(100 - len(list_documents) + 1, text=progress_text)
+                  time.sleep(1)
+                  progress_bar.progress(100, text="Files upload completed. :white_check_mark:")
+                  with st.spinner("Waiting for Amazon Bedrock to complete syncing the data ..."):
+                    time.sleep(60)
+                  st.success("Done!")
+          
+          elif st.session_state["authentication_status"] is False:
+            st.error('Username/password is incorrect')
+          elif st.session_state["authentication_status"] is None:
+            st.warning('Please enter your username and password')
+            st.stop()
+
+          EOF
+
+          cat > /tmp/streamlit-cfn-webapp/app.py << EOF
+          import json
+          import boto3
+          import streamlit as st
+          from streamlit_chat import message
+          import requests as req
+          from typing import List, Tuple, Dict
+          import streamlit_authenticator as stauth
+          from streamlit_authenticator.utilities.hasher import Hasher
+          import yaml
+          from yaml.loader import SafeLoader
+          import random
+
+          # global constants
+          STREAMLIT_SESSION_VARS: List[Tuple] = [("generated", []), ("past", []), ("input", ""), ("stored_session", [])]
+          HTTP_OK: int = 200
+
+          USE_CASE_LIST: List[str] = ["${GenAIProjectUseCase}"]  
+          TEXT2TEXT_MODEL_LIST: List[str] = ["${TextModelName}"]  
+          EMBEDDINGS_MODEL_LIST: List[str] = ["${EmbeddingModelName}"]
+
+          # API endpoint
+          api: str = "https://${BedrockRestApi}.execute-api.us-east-1.amazonaws.com/DEV"
+          
+          # Page title
+          st.set_page_config(page_title=f"{USE_CASE_LIST[0]}", layout='wide')
+
+          with open("/tmp/streamlit-cfn-webapp/auth_config.yaml") as file:
+              config = yaml.load(file, Loader=SafeLoader)
+
+          authenticator = stauth.Authenticate(
+              config['credentials'],
+              config['cookie']['name'],
+              config['cookie']['key'],
+              config['cookie']['expiry_days']
+          )
+          
+          login_result = authenticator.login('main', fields={"Form name": "Login"}) or (None, None, None)
+          name, authentication_status, username = login_result
+
+          ####################
+          # Streamlit code
+          ####################
+          st.markdown("""
+            <style>
+                  .block-container {
+                        padding-top: 0rem;
+                        # padding-bottom: 0rem;
+                        # padding-left: 5rem;
+                        # padding-right: 5rem;
+                    }
+            </style>
+            """, unsafe_allow_html=True
+          )
+
+          if st.session_state["authentication_status"]:
+              authenticator.logout("Logout", "sidebar")
+
+              st.success(f"Welcome to the HR Assistant Agent 👋")
+
+              st.header(f"{USE_CASE_LIST[0]}")
+              
+              st.markdown('''
+                  ✅ **To get started:**
+
+                  1. Go to the **upload documents** tab in the sidebar.
+                  2. Upload the following HR document from the repository: **CompanyXYZ HR Policy.pdf**
+                  3. Populate the DynamoDB table prefixed with **employee-info-table** using the employee data provided in the following JSON file from the repository: **employee-data-items.json**
+
+                  📂 **Repository:** [GitHub - HR Assistant Agent Project](https://github.com/ZakariaD/building-generative-ai-applications-with-amazon-bedrock-agents/tree/main/HR-Assistant-Agent)
+
+                  ---
+
+                  💬 **Once uploaded, you can begin testing your HR Assistant Agent using sample prompts below:**
+
+                  ''')
+              
+              sample_promt = '''
+                🟢 BASIC INTERACTIONS:
+                - Hi, I'm new here. Can you help me get started?
+                - What can you assist me with?
+                - Tell me about CompanyXYZ's mission and values.
+                - Where can I find general HR information?
+
+                🩺 HEALTH & BENEFITS:
+                - What are the key healthcare benefits at CompanyXYZ?
+                - Do we have dental or vision coverage?
+                - How do I sign up for or change my health insurance plan?
+                - What's our 401(k) matching policy?
+                - Is there a wellness program or mental health support?
+                - Do we offer life or disability insurance?
+
+                📜 POLICIES & PROCEDURES:
+                - Can you summarize the key corporate policies at CompanyXYZ?
+                - What is the dress code policy?
+                - What's the remote work or hybrid work policy?
+                - What's our code of conduct?
+                - How does the performance review process work?
+                - Where can I find the employee handbook?
+
+                🌴 TIME OFF & LEAVE:
+                - What is the PTO policy at CompanyXYZ?
+                - How much PTO do I have left? (Try with: A101, A102, A103,..,A110)
+                - Help me request time off from July 30, 2025 to August 3, 2025 (Type: PTO).
+                - How does sick leave work?
+                - What's our maternity and paternity leave policy?
+                - Can I carry over unused PTO to the next year?
+                - If my PTO is approved, how many days will remain?
+
+                👤 MANAGEMENT & CONTACTS:
+                - Who is my manager? (Employee ID: A101)
+                - I forgot my manager's name and email—can you remind me?
+                - Who's in the HR department and how can I reach them?
+                - What's the contact info for the IT helpdesk?
+
+                💰 PAYROLL & COMPENSATION:
+                - When is the next payday?
+                - How can I update my bank details for direct deposit?
+                - What's our process for salary reviews?
+                - Where can I find my latest paystub?
+                - How are bonuses calculated?
+
+                🧠 ADVANCED / CONTEXTUAL TESTS:
+                - What holidays do we have left this year?
+                - I uploaded new documents—can you check if they're processed?
+                - Can you remember my previous question about PTO?
+                - I changed my health plan last month. When will it take effect?
+
+                📌 TESTING TIPS:
+                - Use test Employee IDs: A101, A102, A103,...,A110
+                - If asked for your ID again, say: “You already have my employee ID, right?”
+                - Try rephrasing the same question to test consistency.
+                - Ask multiple related questions in one session to test memory and context awareness.
+                '''
+              st.code(sample_promt, language="css")
+
+              if 'chat_history' not in st.session_state:
+                st.session_state.chat_history = []
+
+              for message in st.session_state.chat_history:
+                with st.chat_message(message['role']):
+                  st.markdown(message['text'])
+
+              # get user input
+              user_input = st.chat_input(f"I am your {USE_CASE_LIST[0]}, ask me your questions and I will answer...", key="input_key")
+              session_id = req.get('https://checkip.amazonaws.com').text.strip() # POC: Uses IP. Production: Use user ID
+
+              
+              if user_input:
+                with st.chat_message('user'):
+                    st.markdown(user_input)
+                st.session_state.chat_history.append({"role":'user', "text":user_input})
+
+                # headers for request and response encoding, same for both endpoints
+                headers: Dict = {"accept": "application/json", "Content-Type": "application/json"}
+                response: str = None
+
+                data = {"prompt": user_input, "session_id": session_id}
+                response = req.get(api, headers=headers, params=data).json()
+
+                if "output" in response:
+                   if 'text' in response['output']:
+                      response = response['output']['text']
+
+                with st.chat_message('assistant'):
+                    st.markdown(response)
+                st.session_state.chat_history.append({"role":'assistant', "text": response})
+
+                          
+          elif st.session_state["authentication_status"] is False:
+              st.error('Username/password is incorrect')
+          elif st.session_state["authentication_status"] is None:
+              st.warning('Please enter your username and password')
+              st.stop()
+
+          EOF
+
+          nohup python3 -m streamlit run /tmp/streamlit-cfn-webapp/app.py &
+      
+          /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource WebAppASG --region ${AWS::Region}
+
+      KeyName: !Ref WebAppEC2KeyPair
+
+  WebAppASG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: !Sub WebAppASG-${AWS::StackName}
+      VPCZoneIdentifier:
+        - !Ref WebAppPrivateSubnet1
+        - !Ref WebAppPrivateSubnet2
+      LaunchConfigurationName: !Ref WebAppASGLaunchConfig
+      MinSize: 1
+      MaxSize: 2
+      TargetGroupARNs:
+        - !Ref WebAppALBTargetGroup
+      Tags:
+        - Key: Name
+          Value: !Sub WebApp-${AWS::StackName}
+          PropagateAtLaunch: true
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MinInstancesInService: 0
+        MaxBatchSize: 1
+        PauseTime: PT5M
+        WaitOnResourceSignals: true
+
+  WebAppASGScaleUpPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref WebAppASG
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: 70.0
+
+  ### ALB ### 
+
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub WebAppALB-${AWS::StackName}
+      Type: application
+      Scheme : internet-facing
+      IpAddressType: ipv4
+      Subnets:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      SecurityGroups:
+        - !GetAtt ALBSecurityGroup.GroupId
+
+  # ### WebApp ###
+
+  WebAppALBTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub WebAppALBTG-${AWS::StackName}
+      HealthCheckPath: /
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 3
+      Port: 8501
+      Protocol: HTTP
+      UnhealthyThresholdCount: 5
+      VpcId: !Ref VPC
+
+  WebAppALBHTTPListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref WebAppALBTargetGroup
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: "80"
+      Protocol: HTTP
+
+
+  ## CDN ####
+
+  WebAppCloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment : !Sub "cloudfront distribution for Streamlit WebApp ${AWS::StackName}"
+        Enabled: true
+        PriceClass: PriceClass_100
+        HttpVersion: http2
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - DELETE
+            - GET
+            - HEAD
+            - OPTIONS
+            - PATCH
+            - POST
+            - PUT
+          CachedMethods:
+            - GET
+            - HEAD
+          DefaultTTL: 86400
+          MaxTTL: 31536000
+          MinTTL: 0
+          ForwardedValues:
+            QueryString: true
+            Headers:
+              - '*'
+            Cookies:
+              Forward: all
+          TargetOriginId: elb
+          ViewerProtocolPolicy: allow-all
+          Compress: true
+        Origins:
+          - DomainName: !GetAtt ApplicationLoadBalancer.DNSName
+            Id: elb
+            CustomOriginConfig:
+              OriginProtocolPolicy: http-only
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+
+Outputs:
+  WebAppCDNDomainName:
+    Description: The Streamlit WebApp CDN Domain Name
+    Value: !Join ['',['https://', !GetAtt WebAppCloudFrontDistribution.DomainName]]  
+  DataSourceS3BucketName:
+    Description: The S3 Bucket Data Source
+    Value: !Ref BedrockDataSourceS3Bucket
