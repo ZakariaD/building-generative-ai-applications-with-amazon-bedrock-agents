@@ -51,7 +51,7 @@ A video demonstration of the agent in action is available in the `Video/` folder
 │   ├── Companyxyz Employee Handbook.pdf
 │   └── employee-data-items.json
 ├── Video/
-│   └── demo-hr-agent-2x-1080.mp4
+│   └── demo-hr-assistant-agent.mp4
 ├── streamlit-auth.txt
 └── README.md             
 ```
