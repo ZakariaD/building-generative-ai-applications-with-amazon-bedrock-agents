@@ -1,2 +1,2 @@
-hr.assistant@poc.user
-hr.assistant@poc.user.2025
+login: hr.assistant@poc.user
+password: hr.assistant@poc.user.2025
