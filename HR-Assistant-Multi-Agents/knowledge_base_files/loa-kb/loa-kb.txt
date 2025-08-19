@@ -1,0 +1,56 @@
+## Leave Types
+
+### Paid Time Off (PTO)
+- Annual allocation: 20 days for full-time employees
+- Accrual rate: 1.67 days per month
+- Maximum carryover: 5 days to next year
+- Minimum notice: 2 weeks for planned leave
+
+### Sick Leave
+- Annual allocation: 10 days
+- No carryover to next year
+- Medical documentation required for 3+ consecutive days
+- Family care coverage included
+
+### Parental Leave
+- Maternity leave: 12 weeks paid
+- Paternity leave: 6 weeks paid
+- Adoption leave: 8 weeks paid
+- Must be taken within first year of birth/adoption
+
+### Bereavement Leave
+- Immediate family: 5 days paid
+- Extended family: 3 days paid
+- Documentation may be required
+
+### Personal Leave
+- Unpaid leave up to 30 days per year
+- Manager approval required
+- Benefits continuation available
+
+## Leave Request Process
+
+### Submission Requirements
+- Submit request minimum 2 weeks in advance
+- Use company leave management system
+- Include coverage plan for responsibilities
+- Manager approval required
+
+### Approval Workflow
+1. Employee submits request
+2. Manager reviews and approves/denies
+3. HR validates leave balance
+4. System updates employee record
+5. Confirmation sent to employee
+
+### Emergency Leave
+- Same-day requests for emergencies
+- Phone/email notification required
+- Documentation within 48 hours
+- Manager discretion for approval
+
+## Leave Balance Management
+- Real-time balance tracking
+- Monthly balance statements
+- Year-end balance reconciliation
+- Payout policies for unused leave

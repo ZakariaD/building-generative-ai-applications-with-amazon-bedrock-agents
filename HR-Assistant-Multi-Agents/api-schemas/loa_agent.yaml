@@ -1,0 +1,82 @@
+openapi: 3.0.0
+info:
+  title: LOA Agent API
+  version: 1.0.0
+  description: API for leave of absence management
+paths:
+  /leave-request:
+    post:
+      summary: Submit leave request
+      description: Submit a new leave request
+      operationId: submitLeaveRequest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                employee_id:
+                  type: string
+                  description: Employee identifier
+                leave_type:
+                  type: string
+                  description: Type of leave
+                  enum:
+                    - PTO
+                    - sick
+                    - FMLA
+                    - parental
+                    - bereavement
+                start_date:
+                  type: string
+                  description: Leave start date
+                end_date:
+                  type: string
+                  description: Leave end date
+                reason:
+                  type: string
+                  description: Reason for leave
+              required:
+                - employee_id
+                - leave_type
+                - start_date
+                - end_date
+      responses:
+        '200':
+          description: Leave request submitted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  request_id:
+                    type: string
+  /leave-balance:
+    get:
+      summary: Get leave balance
+      description: Retrieve employee leave balance
+      operationId: getLeaveBalance
+      parameters:
+        - name: employee_id
+          in: query
+          required: true
+          description: Employee identifier
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Leave balance retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  employee_id:
+                    type: string
+                  pto_balance:
+                    type: number
+                  sick_balance:
+                    type: number

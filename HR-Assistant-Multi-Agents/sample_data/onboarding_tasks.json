@@ -1,0 +1,79 @@
+[
+  {
+    "employee_id": "EMP003",
+    "task_id": "TASK001",
+    "task_name": "Complete I-9 Form",
+    "description": "Verify employment eligibility documentation",
+    "status": "completed",
+    "due_date": "2023-01-12",
+    "completed_date": "2023-01-11",
+    "assigned_to": "HR",
+    "category": "documentation"
+  },
+  {
+    "employee_id": "EMP003",
+    "task_id": "TASK002",
+    "task_name": "Setup Direct Deposit",
+    "description": "Provide banking information for payroll",
+    "status": "completed",
+    "due_date": "2023-01-15",
+    "completed_date": "2023-01-13",
+    "assigned_to": "Payroll",
+    "category": "payroll"
+  },
+  {
+    "employee_id": "EMP003",
+    "task_id": "TASK003",
+    "task_name": "IT Equipment Setup",
+    "description": "Laptop, phone, and security badge assignment",
+    "status": "completed",
+    "due_date": "2023-01-10",
+    "completed_date": "2023-01-10",
+    "assigned_to": "IT",
+    "category": "equipment"
+  },
+  {
+    "employee_id": "EMP003",
+    "task_id": "TASK004",
+    "task_name": "Benefits Enrollment",
+    "description": "Select health, dental, and retirement plans",
+    "status": "completed",
+    "due_date": "2023-01-20",
+    "completed_date": "2023-01-18",
+    "assigned_to": "Benefits",
+    "category": "benefits"
+  },
+  {
+    "employee_id": "EMP006",
+    "task_id": "TASK005",
+    "task_name": "Complete I-9 Form",
+    "description": "Verify employment eligibility documentation",
+    "status": "pending",
+    "due_date": "2024-02-20",
+    "completed_date": null,
+    "assigned_to": "HR",
+    "category": "documentation"
+  },
+  {
+    "employee_id": "EMP006",
+    "task_id": "TASK006",
+    "task_name": "Security Training",
+    "description": "Complete mandatory security awareness training",
+    "status": "in_progress",
+    "due_date": "2024-02-25",
+    "completed_date": null,
+    "assigned_to": "Security",
+    "category": "training"
+  },
+  {
+    "employee_id": "EMP006",
+    "task_id": "TASK007",
+    "task_name": "Department Orientation",
+    "description": "Meet team members and review department processes",
+    "status": "pending",
+    "due_date": "2024-02-22",
+    "completed_date": null,
+    "assigned_to": "Manager",
+    "category": "orientation"
+  }
+]

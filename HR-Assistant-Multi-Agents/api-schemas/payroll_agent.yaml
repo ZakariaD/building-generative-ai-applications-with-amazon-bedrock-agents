@@ -1,0 +1,85 @@
+openapi: 3.0.0
+info:
+  title: Payroll Agent API
+  version: 1.0.0
+  description: API for payroll operations and employee compensation management
+paths:
+  /payroll-calculate:
+    post:
+      summary: Calculate employee payroll for a specific pay period
+      description: Calculate gross pay, deductions, and net pay for an employee
+      operationId: calculatePayroll
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                employee_id:
+                  type: string
+                  description: The unique identifier of the employee
+                pay_period:
+                  type: string
+                  description: Pay period in YYYY-MM-DD format
+              required:
+                - employee_id
+                - pay_period
+      responses:
+        '200':
+          description: Successfully calculated payroll
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  employee_id:
+                    type: string
+                    description: The employee identifier
+                  gross_pay:
+                    type: number
+                    description: Gross pay amount before deductions
+                  net_pay:
+                    type: number
+                    description: Net pay amount after deductions
+                  deductions:
+                    type: number
+                    description: Total deductions amount
+  /payroll-history:
+    get:
+      summary: Get employee payroll history
+      description: Retrieve historical payroll records for a specific employee
+      operationId: getPayrollHistory
+      parameters:
+        - name: employee_id
+          in: query
+          required: true
+          description: The unique identifier of the employee
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully retrieved payroll history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  employee_id:
+                    type: string
+                    description: The employee identifier
+                  payroll_records:
+                    type: array
+                    description: List of historical payroll records
+                    items:
+                      type: object
+                      properties:
+                        pay_period:
+                          type: string
+                          description: Pay period date
+                        gross_pay:
+                          type: number
+                          description: Gross pay amount
+                        net_pay:
+                          type: number
+                          description: Net pay amount

@@ -1,0 +1,93 @@
+openapi: 3.0.0
+info:
+  title: Onboarding Agent API
+  version: 1.0.0
+  description: API for employee onboarding and task management
+paths:
+  /onboarding-tasks:
+    get:
+      summary: Get onboarding tasks for an employee
+      description: Retrieve the list of onboarding tasks for a specific employee
+      operationId: getOnboardingTasks
+      parameters:
+        - name: employee_id
+          in: query
+          required: true
+          description: The unique identifier of the employee
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully retrieved onboarding tasks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  employee_id:
+                    type: string
+                    description: The employee identifier
+                  tasks:
+                    type: array
+                    description: List of onboarding tasks
+                    items:
+                      type: object
+                      properties:
+                        task_id:
+                          type: string
+                          description: Unique task identifier
+                        task_name:
+                          type: string
+                          description: Name of the task
+                        status:
+                          type: string
+                          description: Current status of the task
+                        due_date:
+                          type: string
+                          description: Due date for the task
+  /onboarding-task-update:
+    post:
+      summary: Update onboarding task status
+      description: Update the status of a specific onboarding task
+      operationId: updateTaskStatus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                employee_id:
+                  type: string
+                  description: The employee identifier
+                task_id:
+                  type: string
+                  description: The task identifier to update
+                status:
+                  type: string
+                  description: New status for the task
+                  enum:
+                    - pending
+                    - in_progress
+                    - completed
+              required:
+                - employee_id
+                - task_id
+                - status
+      responses:
+        '200':
+          description: Task status updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Success message
+                  task_id:
+                    type: string
+                    description: The updated task identifier
+                  status:
+                    type: string
+                    description: The new status of the task

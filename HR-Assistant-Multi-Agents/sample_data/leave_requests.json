@@ -1,0 +1,62 @@
+[
+  {
+    "request_id": "REQ001",
+    "employee_id": "EMP001",
+    "leave_type": "PTO",
+    "start_date": "2024-02-15",
+    "end_date": "2024-02-19",
+    "days_requested": 5,
+    "status": "approved",
+    "reason": "Family vacation",
+    "submitted_date": "2024-01-20",
+    "approved_by": "EMP005"
+  },
+  {
+    "request_id": "REQ002",
+    "employee_id": "EMP002",
+    "leave_type": "sick",
+    "start_date": "2024-01-25",
+    "end_date": "2024-01-26",
+    "days_requested": 2,
+    "status": "approved",
+    "reason": "Medical appointment",
+    "submitted_date": "2024-01-24",
+    "approved_by": "EMP006"
+  },
+  {
+    "request_id": "REQ003",
+    "employee_id": "EMP003",
+    "leave_type": "FMLA",
+    "start_date": "2024-03-01",
+    "end_date": "2024-03-15",
+    "days_requested": 10,
+    "status": "pending",
+    "reason": "Family medical emergency",
+    "submitted_date": "2024-02-10",
+    "approved_by": null
+  },
+  {
+    "request_id": "REQ004",
+    "employee_id": "EMP004",
+    "leave_type": "parental",
+    "start_date": "2024-04-01",
+    "end_date": "2024-06-01",
+    "days_requested": 42,
+    "status": "approved",
+    "reason": "Maternity leave",
+    "submitted_date": "2024-01-15",
+    "approved_by": "EMP008"
+  },
+  {
+    "request_id": "REQ005",
+    "employee_id": "EMP001",
+    "leave_type": "bereavement",
+    "start_date": "2024-01-10",
+    "end_date": "2024-01-12",
+    "days_requested": 3,
+    "status": "approved",
+    "reason": "Family bereavement",
+    "submitted_date": "2024-01-09",
+    "approved_by": "EMP005"
+  }
+]
