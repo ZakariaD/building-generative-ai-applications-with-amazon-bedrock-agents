@@ -9,6 +9,6 @@ env = cdk.Environment(
     region=os.environ.get("CDK_DEFAULT_REGION", "us-east-1")
 )
 
-HRBedrockStack(app, "HRBedrockStack", stack_name="hr-multi-agent-poc", env=env)
+HRBedrockStack(app, "HRBedrockStack", stack_name="hr-multi-agent", env=env)
 
 app.synth()
