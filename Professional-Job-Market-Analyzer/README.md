@@ -196,7 +196,7 @@ Application interface examples:
 - **Home Page**: Main job search interface
 - **Analysis Results**: Job search results and salary analytics
 
-> **📥 Download**: [Screenshot](screenshots/screenshots.zip)
+> **📥 Download**: [Screenshot](screenshots/screenshots.zip) (if image not displayed)
 
 ![Home Page](screenshots/home-page.png)
 
