@@ -66,6 +66,8 @@ A video demonstration of the agent in action is available in the `Video/` folder
 
 ## Architecture
 
+> **📥 Download**: [Architecture Diagram](Architecture/Architecture.zip) (if image not displayed)
+
 ![Architecture Diagram](Architecture/Architecture.png)
 
 
