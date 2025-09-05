@@ -74,6 +74,8 @@
 
 ## Architecture
 
+> **📥 Download**: [Architecture Diagram](Architecture/Architecture.zip) (if image not displayed)
+
 ![Architecture Diagram](Architecture/Architecture.jpeg)
 
 The system uses a hierarchical multi-agents architecture:

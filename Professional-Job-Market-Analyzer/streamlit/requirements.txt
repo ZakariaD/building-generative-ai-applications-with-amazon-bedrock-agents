@@ -1,0 +1,6 @@
+streamlit
+boto3
+strands-agents
+mcp
+fastmcp
+matplotlib
