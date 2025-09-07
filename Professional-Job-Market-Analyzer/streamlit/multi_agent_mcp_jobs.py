@@ -48,7 +48,7 @@ usajobs_client = MCPClient(
 bedrock_model = BedrockModel(
     model_id=os.getenv("BEDROCK_MODEL"),
     temperature=0.7,
-    session = session
+    boto_session = session
 )
 
 ADZUNA_AGENT_PROMPT = """
