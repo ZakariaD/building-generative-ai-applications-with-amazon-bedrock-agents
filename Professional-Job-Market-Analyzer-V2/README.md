@@ -1,13 +1,13 @@
-# Professional Job Market Analyzer
+# HR Bedrock MCP Stack
 
-[![AWS](https://img.shields.io/badge/AWS-Generative%20AI-orange)](https://aws.amazon.com/)
+[![AWS](https://img.shields.io/badge/AWS-CDK-orange)](https://aws.amazon.com/cdk/)
 [![Python](https://img.shields.io/badge/Python-3.13+-blue)](https://python.org)
 [![Bedrock](https://img.shields.io/badge/Amazon-Bedrock-purple)](https://aws.amazon.com/bedrock/)
-[![CDK](https://img.shields.io/badge/IaC-CDK-yellow)](https://aws.amazon.com/cdk/)
+[![ECS](https://img.shields.io/badge/AWS-ECS%20Fargate-yellow)](https://aws.amazon.com/ecs/)
 [![MCP](https://img.shields.io/badge/Protocol-MCP-green)](https://modelcontextprotocol.io/)
 [![Strands](https://img.shields.io/badge/Strands-Agents-red)](https://strandsagents.com/)
 
-> This project presents the **Professional Job Market Analyzer**, an advanced generative AI solution built using Amazon Bedrock with Model Context Protocol (MCP) integration and Strands Agents. It concists of a Career Strategy Coordinator which orchestrates specialized job search agents to provide comprehensive career intelligence through intelligent agent coordination.
+> This project presents the second version of the **Professional Job Market Analyzer**, a cloud-native infrastructure solution built using AWS CDK for deploying multi-agent job search applications with Model Context Protocol (MCP) integration. It orchestrates containerized MCP servers and Streamlit applications across secure VPC environments with auto-scaling capabilities.
 
 ## 📋 Table of Contents
 
@@ -18,39 +18,43 @@
 - [Prerequisites](#prerequisites)
 - [Configuration](#configuration)
 - [Deployment](#deployment)
+- [MCP Server Capabilities](#mcp-server-capabilities)
 
 ## Features
 
-- **Multi-Agent Orchestration** - Coordinated job search across multiple platforms
-- **MCP Integration** - Model Context Protocol for enhanced agent communication
-- **Dual-Source Intelligence** - Private sector (Adzuna) and federal jobs (USAJobs)
-- **Real-time Processing** - Serverless ECS Fargate for scalable responses
-- **Interactive Interface** - Professional Streamlit web application
-- **Salary Analytics** - Visual salary distribution charts and market analysis
-- **Auto-scaling Infrastructure** - Dynamic scaling based on demand
+- **Multi-VPC Architecture** - Isolated networks for tools and agents with PrivateLink connectivity
+- **Containerized MCP Servers** - Scalable Adzuna and USAJobs API integrations
+- **Auto-scaling ECS Fargate** - Serverless container orchestration with dynamic scaling
+- **CloudFront Distribution** - Global CDN for optimal application performance
+- **Secrets Management** - Secure API credential storage with AWS Secrets Manager
+- **VPC Endpoints** - Private connectivity to AWS services without internet routing
+- **S3 Chart Storage** - Salary visualization chart storage
 
 ## Project Structure
 
 ```
 ├── Architecture/                # Architecture diagrams
-│   └── Architecture.png         # System architecture diagram
+│   ├── Architecture.jpeg        # System architecture diagram
 ├── screenshots/                 # Application screenshots
-├── secrets/                     # API credentials (not in version control)
+├── mcp_servers/                 # MCP server implementations
+│   ├── adzuna/                  # Adzuna job search MCP server
+│   │   ├── Dockerfile           # Container configuration
+│   │   ├── index.py             # FastMCP server implementation
+│   │   └── requirements.txt     # Python dependencies
+│   └── usajobs/                 # USAJobs MCP server
+│       ├── Dockerfile           # Container configuration
+│       ├── index.py             # FastMCP server implementation
+│       └── requirements.txt     # Python dependencies
+├── secrets/                     # API credentials (gitignored)
 │   ├── adzuna.json              # Adzuna API credentials
 │   └── usajobs.json             # USAJobs API credentials
 ├── streamlit/                   # Frontend application
-│   ├── charts/                  # Generated salary charts
-│   ├── mcp_servers/             # MCP server implementations
-│   │   ├── adzuna/              # Adzuna job search MCP server
-│   │   │   └── index.py         # Adzuna API integration
-│   │   └── usajobs/             # USAJobs MCP server
-│   │       └── index.py         # USAJobs API integration
 │   ├── chatbot_st.py            # Main Streamlit interface
-│   ├── multi_agent_mcp_jobs.py  # Job orchestrator agent
+│   ├── multi_agent_jobs.py      # Multi-agent orchestrator
 │   ├── Dockerfile               # Container configuration
 │   └── requirements.txt         # Application dependencies
 ├── app.py                       # CDK application entry point
-├── bedrock_mcp_stack.py         # CDK stack definition
+├── hr_bedrock_mcp_stack.py      # Main CDK stack definition
 ├── cdk.json                     # CDK configuration
 ├── README.md                    # This documentation
 └── requirements.txt             # CDK dependencies
@@ -58,19 +62,34 @@
 
 ## Architecture
 
-> **📥 Download**: [Architecture Diagram](Architecture/Architecture.zip) (if image not displayed)
+> **📥 Download**: [Architecture Diagram](Architecture/Architecture.zip)
 
 ![Architecture Diagram](Architecture/Architecture.jpeg)
 
+The system implements a secure multi-VPC architecture with the following components:
 
-The system uses a containerized multi-agent architecture with MCP integration:
+### MCP Server Hub VPC 
+- **ECS Fargate Cluster** - Containerized Adzuna and USAJobs MCP servers
+- **Internal Network Load Balancer** - Private load balancing for MCP services (ports 8001, 8002)
+- **VPC Endpoint Service** - Exposes MCP servers via PrivateLink
+- **VPC Endpoints** - Bedrock, ECR, Secrets Manager, CloudWatch Logs, S3
 
-- **Job Orchestrator Agent** - Coordinates job search across multiple sources
-- **Adzuna MCP Server** - Handles private sector job searches and salary data
-- **USAJobs MCP Server** - Processes federal government job opportunities
-- **ECS Fargate** - Serverless container hosting with auto-scaling
-- **Application Load Balancer** - High availability and traffic distribution
-- **CloudFront** - Global content delivery and caching
+### Agentic App VPC 
+- **ECS Fargate Cluster** - Streamlit application container
+- **Internet-facing Network Load Balancer** - Public access on port 80
+- **Interface VPC Endpoint** - Secure PrivateLink connection to MCP servers
+- **VPC Endpoints** - Complete AWS service connectivity
+
+### Cross-VPC Connectivity
+- **VPC Endpoint Service** - Exposes MCP servers via PrivateLink
+- **Interface VPC Endpoint** - Consumes MCP tools in agentoc App VPC
+
+### AWS Services Integration
+- **Amazon Bedrock** - Claude 3.7 Sonnet for AI model
+- **ECS Fargate** - Serverless container hosting
+- **CloudFront** - Global content delivery network
+- **S3** - Chart storage
+- **Secrets Manager** - Secure credential management
 
 ## Getting Started
 
@@ -117,7 +136,7 @@ The system uses a containerized multi-agent architecture with MCP integration:
    ```bash
    # Create and activate virtual environment
    python -m venv venv
-   source venv/bin/activate 
+   source venv/bin/activate  
    
    # Install Python dependencies
    pip install -r requirements.txt
@@ -155,13 +174,14 @@ The system uses a containerized multi-agent architecture with MCP integration:
 
 The CDK stack deploys:
 
-- **VPC with Private Subnets** - Secure networking with VPC endpoints
-- **ECS Fargate Cluster** - Serverless container hosting
-- **Application Load Balancer** - Traffic distribution and health checks
-- **CloudFront Distribution** - Global CDN for optimal performance
-- **Secrets Manager** - Secure API credential storage
-- **Auto Scaling** - Dynamic scaling (2-10 instances based on CPU)
-- **CloudWatch Logs** - Centralized logging and monitoring
+- **VPC MCP Hub** - Private network (10.1.0.0/16) for MCP servers
+- **VPC Agentic App** - Private network (10.2.0.0/16) for applications
+- **VPC Endpoints** - Bedrock, ECR, Secrets Manager, CloudWatch Logs, S3
+- **ECS Fargate Clusters** - Serverless container hosting in both VPCs
+- **Auto Scaling** - Dynamic scaling (1-5 instances based on CPU utilization)
+- **Network Load Balancers** - Internal (MCP Hub) and external (Agentic App) load balancing
+- **CloudFront Distribution** - Global CDN with caching optimization
+- **S3 Bucket** - Chart storage management
 
 ### VPC Endpoints
 
@@ -171,8 +191,7 @@ The stack includes VPC endpoints for secure AWS service access:
 - ECR API and DKR
 - Secrets Manager
 - CloudWatch Logs
-
-## Contents Overview
+- S3
 
 ### MCP Servers
 Model Context Protocol implementations for job search services:
@@ -181,10 +200,11 @@ Model Context Protocol implementations for job search services:
 
 ### Streamlit Application
 Professional job market analyzer with features:
-- **Multi-Source Analysis**: Combined private and federal job search
-- **Salary Visualization**: Interactive charts and market trends
-- **Personalized Recommendations**: Tailored based on user profile
-- **Real-time Processing**: Live job market data and analysis
+- **Multi-Agent Orchestration** - Coordinated private and federal job search
+- **Interactive Interface** - Professional profile configuration
+- **Real-time Analysis** - Live job market data processing
+- **Salary Visualization** - Automated chart generation and display
+- **Personalized Recommendations** - Tailored career intelligence
 
 ### Usage patterns
 - **Job Search Queries**: Various search patterns and filters

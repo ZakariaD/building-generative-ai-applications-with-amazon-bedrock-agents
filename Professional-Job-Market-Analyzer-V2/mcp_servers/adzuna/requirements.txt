@@ -1,0 +1,5 @@
+boto3
+fastmcp
+matplotlib
+requests
+starlette

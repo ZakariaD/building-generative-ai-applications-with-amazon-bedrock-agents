@@ -93,8 +93,9 @@ The system uses a hierarchical multi-agents architecture:
 
 1. **Environment Setup**
    ```bash
-   # Install AWS CDK
-   npm install -g aws-cdk
+   # Create and activate virtual environment
+   python -m venv venv
+   source venv/bin/activate 
    
    # Install Python dependencies
    pip install -r requirements.txt
@@ -129,7 +130,7 @@ The system uses a hierarchical multi-agents architecture:
 - **AWS Account** with appropriate permissions
   - IAM permissions for Bedrock, Lambda, S3, DynamoDB, OpenSearch
   - Account ID required for CDK deployment
-- **AWS CDK v2** installed and configured (`npm install -g aws-cdk`)
+- **AWS CDK v2** installed and configured 
 - **Amazon Bedrock** access enabled in your region (us-east-1)
   - Claude 3.7 Sonnet model access
   - Titan Embedding model V1 access
