@@ -1,13 +1,14 @@
-# HR Bedrock MCP Stack
+# HR Bedrock Agent Core Stack
 
 [![AWS](https://img.shields.io/badge/AWS-CDK-orange)](https://aws.amazon.com/cdk/)
 [![Python](https://img.shields.io/badge/Python-3.13+-blue)](https://python.org)
 [![Bedrock](https://img.shields.io/badge/Amazon-Bedrock-purple)](https://aws.amazon.com/bedrock/)
-[![ECS](https://img.shields.io/badge/AWS-ECS%20Fargate-yellow)](https://aws.amazon.com/ecs/)
-[![MCP](https://img.shields.io/badge/Protocol-MCP-green)](https://modelcontextprotocol.io/)
+[![Lambda](https://img.shields.io/badge/AWS-Lambda-yellow)](https://aws.amazon.com/lambda/)
+[![Agent Core](https://img.shields.io/badge/Bedrock-Agent%20Core-green)](https://aws.amazon.com/bedrock/)
+[![MCP](https://img.shields.io/badge/MCP-Model%20Context%20Protocol-lightblue)](https://modelcontextprotocol.io/)
 [![Strands](https://img.shields.io/badge/Strands-Agents-red)](https://strandsagents.com/)
 
-> This project presents the second version of the **Professional Job Market Analyzer**, a cloud-native infrastructure solution built using AWS CDK for deploying multi-agent job search applications with Model Context Protocol (MCP) integration. It orchestrates containerized MCP servers and Streamlit applications across secure VPC environments with auto-scaling capabilities.
+> This project presents the third version of the **Professional Job Market Analyzer**, a cloud-native infrastructure solution built using AWS CDK for deploying multi-agent job search applications with Bedrock Agent Core Gateway integration and Lambda-based MCP tools.
 
 ## 📋 Table of Contents
 
@@ -21,28 +22,28 @@
 
 ## Features
 
-- **Multi-VPC Architecture** - Isolated networks for tools and agents with PrivateLink connectivity
-- **Containerized MCP Servers** - Scalable Adzuna and USAJobs API integrations
-- **Auto-scaling ECS Fargate** - Serverless container orchestration with dynamic scaling
+- **Serverless MCP Architecture** - Lambda-based MCP tools with Bedrock Agent Core Gateway
+- **Single VPC Design** - Simplified network architecture with VPC endpoints
+- **Auto-scaling ECS Fargate** - Serverless container orchestration for Streamlit app
 - **CloudFront Distribution** - Global CDN for optimal application performance
 - **Secrets Management** - Secure API credential storage with AWS Secrets Manager
 - **VPC Endpoints** - Private connectivity to AWS services without internet routing
 - **S3 Chart Storage** - Salary visualization chart storage
+- **Bedrock Agent Core Gateway** - Native MCP protocol support with Lambda integration
 
 ## Project Structure
 
 ```
 ├── Architecture/                # Architecture diagrams
 │   ├── Architecture.jpeg        # System architecture diagram
-├── screenshots/                 # Application screenshots
-├── mcp_servers/                 # MCP server implementations
-│   ├── adzuna/                  # Adzuna job search MCP server
+├── lambda_functions/            # Lambda MCP tool implementations
+│   ├── adzuna_lambda/           # Adzuna job search Lambda function
 │   │   ├── Dockerfile           # Container configuration
-│   │   ├── index.py             # FastMCP server implementation
+│   │   ├── index.py             # Lambda handler implementation
 │   │   └── requirements.txt     # Python dependencies
-│   └── usajobs/                 # USAJobs MCP server
+│   └── usajobs_lambda/          # USAJobs Lambda function
 │       ├── Dockerfile           # Container configuration
-│       ├── index.py             # FastMCP server implementation
+│       ├── index.py             # Lambda handler implementation
 │       └── requirements.txt     # Python dependencies
 ├── secrets/                     # API credentials (gitignored)
 │   ├── adzuna.json              # Adzuna API credentials
@@ -50,10 +51,11 @@
 ├── streamlit/                   # Frontend application
 │   ├── chatbot_st.py            # Main Streamlit interface
 │   ├── multi_agent_jobs.py      # Multi-agent orchestrator
+│   ├── streamable_http_sigv4.py # AWS SigV4 authentication helper
 │   ├── Dockerfile               # Container configuration
 │   └── requirements.txt         # Application dependencies
 ├── app.py                       # CDK application entry point
-├── hr_bedrock_mcp_stack.py      # Main CDK stack definition
+├── bedrock_mcp_stack.py         # Main CDK stack definition
 ├── cdk.json                     # CDK configuration
 ├── README.md                    # This documentation
 └── requirements.txt             # CDK dependencies
@@ -65,27 +67,23 @@
 
 ![Architecture Diagram](Architecture/Architecture.jpeg)
 
-The system implements a secure multi-VPC architecture with the following components:
-
-### MCP Server Hub VPC 
-- **ECS Fargate Cluster** - Containerized Adzuna and USAJobs MCP servers
-- **Internal Network Load Balancer** - Private load balancing for MCP services (ports 8001, 8002)
-- **VPC Endpoint Service** - Exposes MCP servers via PrivateLink
-- **VPC Endpoints** - Bedrock, ECR, Secrets Manager, CloudWatch Logs, S3
+The system implements a serverless architecture with Bedrock Agent Core Gateway integration:
 
 ### Agentic App VPC 
 - **ECS Fargate Cluster** - Streamlit application container
-- **Internet-facing Network Load Balancer** - Public access on port 80
-- **Interface VPC Endpoint** - Secure PrivateLink connection to MCP servers
-- **VPC Endpoints** - Complete AWS service connectivity
+- **Application Load Balancer** - Public access on port 80
+- **VPC Endpoints** - Bedrock, Bedrock Agent Core, ECR, Secrets Manager, CloudWatch Logs, S3
 
-### Cross-VPC Connectivity
-- **VPC Endpoint Service** - Exposes MCP servers via PrivateLink
-- **Interface VPC Endpoint** - Consumes MCP tools in agentoc App VPC
+### Serverless MCP Tools
+- **Lambda Functions** - Containerized Adzuna and USAJobs MCP tools
+- **Bedrock Agent Core Gateways** - Native MCP protocol support
+- **Gateway Targets** - Lambda function integration with tool schemas
 
 ### AWS Services Integration
-- **Amazon Bedrock** - Claude 3.7 Sonnet for AI model
-- **ECS Fargate** - Serverless container hosting
+- **Amazon Bedrock** - Claude 3.7 Sonnet for AI model with cross-region inference profile
+- **Bedrock Agent Core** - Native MCP gateway and tool orchestration
+- **Lambda** - Serverless MCP tool execution
+- **ECS Fargate** - Serverless container hosting for Streamlit app
 - **CloudFront** - Global content delivery network
 - **S3** - Chart storage
 - **Secrets Manager** - Secure credential management
@@ -95,11 +93,12 @@ The system implements a secure multi-VPC architecture with the following compone
 ### Prerequisites
 
 - **AWS Account** with appropriate permissions
-  - IAM permissions for Bedrock, ECS, VPC, CloudFront, Secrets Manager
+  - IAM permissions for Bedrock, Lambda, ECS, VPC, CloudFront, Secrets Manager, Bedrock Agent Core
   - Account ID required for CDK deployment
 - **AWS CDK v2** installed and configured
 - **Amazon Bedrock** access enabled in us-east-1 region
   - Claude 3.7 Sonnet model access required
+- **Bedrock Agent Core** access enabled
 - **Node.js 18+** for CDK
 - **Docker** for containerized deployment
 - **AWS CLI** configured with credentials
@@ -173,12 +172,13 @@ The system implements a secure multi-VPC architecture with the following compone
 
 The CDK stack deploys:
 
-- **VPC MCP Hub** - Private network (10.1.0.0/16) for MCP servers
-- **VPC Agentic App** - Private network (10.2.0.0/16) for applications
-- **VPC Endpoints** - Bedrock, ECR, Secrets Manager, CloudWatch Logs, S3
-- **ECS Fargate Clusters** - Serverless container hosting in both VPCs
-- **Auto Scaling** - Dynamic scaling (1-5 instances based on CPU utilization)
-- **Network Load Balancers** - Internal (MCP Hub) and external (Agentic App) load balancing
+- **VPC Agentic App** - Private network (10.0.0.0/16) for applications
+- **VPC Endpoints** - Bedrock, Bedrock Agent Core, ECR, Secrets Manager, CloudWatch Logs, S3
+- **Lambda Functions** - Serverless MCP tool execution
+- **Bedrock Agent Core Gateways** - Native MCP protocol support with IAM authentication
+- **ECS Fargate Cluster** - Serverless container hosting for Streamlit app
+- **Auto Scaling** - Dynamic scaling (2-10 instances based on CPU utilization)
+- **Application Load Balancer** - External load balancing for Streamlit app
 - **CloudFront Distribution** - Global CDN with caching optimization
 - **S3 Bucket** - Chart storage management
 
@@ -187,29 +187,30 @@ The CDK stack deploys:
 The stack includes VPC endpoints for secure AWS service access:
 - Bedrock Runtime
 - Bedrock Agent Runtime
+- Bedrock Agent Core Gateway
 - ECR API and DKR
 - Secrets Manager
 - CloudWatch Logs
 - S3
 
-### MCP Servers
-Model Context Protocol implementations for job search services:
-- **Adzuna MCP Server**: Private sector job search, salary statistics, company data
-- **USAJobs MCP Server**: Federal government job opportunities and requirements
+### Lambda MCP Tools
+Serverless Model Context Protocol implementations for job search services:
+- **Adzuna Lambda**: Private sector job search, salary statistics, company data
+- **USAJobs Lambda**: Federal government job opportunities and requirements
 
 ### Streamlit Application
 Professional job market analyzer with features:
-- **Multi-Agent Orchestration** - Coordinated private and federal job search
+- **Multi-Agent Orchestration** - Coordinated private and federal job search via Bedrock Agent Core
 - **Interactive Interface** - Professional profile configuration
-- **Real-time Analysis** - Live job market data processing
+- **Real-time Analysis** - Live job market data processing through Lambda tools
 - **Salary Visualization** - Automated chart generation and display
 - **Personalized Recommendations** - Tailored career intelligence
 
-### Usage patterns
-- **Job Search Queries**: Various search patterns and filters
-- **Salary Analysis**: Market research and compensation benchmarking
+### Usage Patterns
+- **Job Search Queries**: Various search patterns and filters across private and federal sectors
+- **Salary Analysis**: Market research and compensation benchmarking with visual charts
 - **Company Research**: Employer analysis and hiring trends
-- **Career Planning**: Professional development pathways
+- **Career Planning**: Professional development pathways with government and private options
 
 ### Screenshots
 Application interface examples:
