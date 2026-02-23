@@ -40,7 +40,6 @@
 ## Project Structure
 
 ```
-blog/
 ├── api-schemas/                    # API specifications for agents
 │   ├── invoice_extraction.yaml     # Extraction agent API
 │   ├── supplier_resolution.yaml    # Supplier resolution API
