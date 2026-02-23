@@ -1,0 +1,68 @@
+From: billing@company-g.co.jp
+To: supplier-invoices@ingestion.company.com
+Subject: Resending Invoice INV-2026-00321 - Not Yet Processed
+Date: Wed, 18 Feb 2026 10:00:00 +0900
+Message-ID: <intent-DUP@company-g.co.jp>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="inv_boundary"
+
+--inv_boundary
+Content-Type: text/plain; charset="UTF-8"
+
+Hello Accounts Payable Team,
+
+We are resubmitting invoice INV-2026-00321 as we have not received confirmation of receipt or payment for the original submission sent on February 5, 2026.
+
+Invoice Details:
+- Supplier: Company G Co
+- Invoice Number: INV-2026-00321
+- PO Number: 990123
+- Invoice Date: February 3, 2026
+- Due Date: March 5, 2026
+- Amount: $1,250.00 USD
+
+Please disregard this email if payment has already been processed.
+If you have already sent payment, kindly provide remittance advice for our records.
+
+We apologize for any inconvenience caused by this duplicate submission.
+
+Best regards,
+Company G Co - Billing Department
+billing@company-g.co.jp
+
+--inv_boundary
+Content-Type: application/pdf
+Content-Disposition: attachment; filename="intent_DUP.pdf"
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjMKJZOMi54gUmVwb3J0TGFiIEdlbmVyYXRlZCBQREYgZG9jdW1lbnQgKG9wZW5zb3Vy
+Y2UpCjEgMCBvYmoKPDwKL0YxIDIgMCBSIC9GMiAzIDAgUgo+PgplbmRvYmoKMiAwIG9iago8PAov
+QmFzZUZvbnQgL0hlbHZldGljYSAvRW5jb2RpbmcgL1dpbkFuc2lFbmNvZGluZyAvTmFtZSAvRjEg
+L1N1YnR5cGUgL1R5cGUxIC9UeXBlIC9Gb250Cj4+CmVuZG9iagozIDAgb2JqCjw8Ci9CYXNlRm9u
+dCAvSGVsdmV0aWNhLUJvbGQgL0VuY29kaW5nIC9XaW5BbnNpRW5jb2RpbmcgL05hbWUgL0YyIC9T
+dWJ0eXBlIC9UeXBlMSAvVHlwZSAvRm9udAo+PgplbmRvYmoKNCAwIG9iago8PAovQ29udGVudHMg
+OCAwIFIgL01lZGlhQm94IFsgMCAwIDYxMiA3OTIgXSAvUGFyZW50IDcgMCBSIC9SZXNvdXJjZXMg
+PDwKL0ZvbnQgMSAwIFIgL1Byb2NTZXQgWyAvUERGIC9UZXh0IC9JbWFnZUIgL0ltYWdlQyAvSW1h
+Z2VJIF0KPj4gL1JvdGF0ZSAwIC9UcmFucyA8PAoKPj4gCiAgL1R5cGUgL1BhZ2UKPj4KZW5kb2Jq
+CjUgMCBvYmoKPDwKL1BhZ2VNb2RlIC9Vc2VOb25lIC9QYWdlcyA3IDAgUiAvVHlwZSAvQ2F0YWxv
+Zwo+PgplbmRvYmoKNiAwIG9iago8PAovQXV0aG9yIChhbm9ueW1vdXMpIC9DcmVhdGlvbkRhdGUg
+KEQ6MjAyNjAyMjIxNTM5MjMtMDUnMDAnKSAvQ3JlYXRvciAoYW5vbnltb3VzKSAvS2V5d29yZHMg
+KCkgL01vZERhdGUgKEQ6MjAyNjAyMjIxNTM5MjMtMDUnMDAnKSAvUHJvZHVjZXIgKFJlcG9ydExh
+YiBQREYgTGlicmFyeSAtIFwob3BlbnNvdXJjZVwpKSAKICAvU3ViamVjdCAodW5zcGVjaWZpZWQp
+IC9UaXRsZSAodW50aXRsZWQpIC9UcmFwcGVkIC9GYWxzZQo+PgplbmRvYmoKNyAwIG9iago8PAov
+Q291bnQgMSAvS2lkcyBbIDQgMCBSIF0gL1R5cGUgL1BhZ2VzCj4+CmVuZG9iago4IDAgb2JqCjw8
+Ci9GaWx0ZXIgWyAvQVNDSUk4NURlY29kZSAvRmxhdGVEZWNvZGUgXSAvTGVuZ3RoIDI1NAo+Pgpz
+dHJlYW0KR2FzMkRoJFNhISY0Wiw6TVhSaFBEMEZAUF1JVTwiVScuc24sN0tQLytZKV5DZ1hbZCpN
+SWkuNUEnWiQpIkBzVkNoSF4uVSdgJ1RkXywsSWFmNVtLIkxtMklrZXFxTUZqMWZbKjwtWChpXjhh
+RzJca1gjXDMqJFhOal5vNl87JkFLdGVVKl51R0EqSnUybD80RmY+ZyE4IlVNMCdoTmcrRUZuTV9M
+QGpETCFRZSpfRUFcay5WYyxBJFcpUjAiWThgKUMxWjNpOShPbDQoRVlFR0BtW3FHKUhnaGJGXV5o
+b0FtL3VoUWklXjheK0g/dFZsVSkhanMlUyNZYUQjfj5lbmRzdHJlYW0KZW5kb2JqCnhyZWYKMCA5
+CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDA2MSAwMDAwMCBuIAowMDAwMDAwMTAyIDAwMDAw
+IG4gCjAwMDAwMDAyMDkgMDAwMDAgbiAKMDAwMDAwMDMyMSAwMDAwMCBuIAowMDAwMDAwNTE0IDAw
+MDAwIG4gCjAwMDAwMDA1ODIgMDAwMDAgbiAKMDAwMDAwMDg0MyAwMDAwMCBuIAowMDAwMDAwOTAy
+IDAwMDAwIG4gCnRyYWlsZXIKPDwKL0lEIApbPDhjM2NlMzY2ZGNkMjMwNzVkMTMzYzQwNjhiYTA4
+YTM5Pjw4YzNjZTM2NmRjZDIzMDc1ZDEzM2M0MDY4YmEwOGEzOT5dCiUgUmVwb3J0TGFiIGdlbmVy
+YXRlZCBQREYgZG9jdW1lbnQgLS0gZGlnZXN0IChvcGVuc291cmNlKQoKL0luZm8gNiAwIFIKL1Jv
+b3QgNSAwIFIKL1NpemUgOQo+PgpzdGFydHhyZWYKMTI0NgolJUVPRgo=
+
+--inv_boundary--

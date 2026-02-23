@@ -1,0 +1,55 @@
+openapi: 3.0.0
+info:
+  title: AP Routing Agent API
+  version: 1.0.0
+  description: API for routing invoices to AP inbox
+paths:
+  /route:
+    post:
+      summary: Route invoice to AP inbox
+      description: Format subject line and send invoice email to AP inbox via SES
+      operationId: routeInvoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                original_subject:
+                  type: string
+                  description: Original email subject line
+                original_body:
+                  type: string
+                  description: Original email body text
+                supplier_id:
+                  type: string
+                  description: Resolved supplier ID from SupplierDirectory
+                intent_code:
+                  type: string
+                  description: Intent code (INV, CRN, PAY, DIS, DUP, OTH)
+                invoice_numbers:
+                  type: string
+                  description: JSON array string of invoice numbers
+                recipient_email:
+                  type: string
+                  description: Ingestion email that received the original email
+              required:
+                - original_subject
+                - original_body
+                - supplier_id
+                - intent_code
+                - invoice_numbers
+                - recipient_email
+      responses:
+        '200':
+          description: Emails routed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  emails_sent:
+                    type: number
+                  results:
+                    type: array

@@ -1,0 +1,46 @@
+openapi: 3.0.0
+info:
+  title: Intent Classification Agent API
+  version: 1.0.0
+  description: API for classifying invoice email intent
+paths:
+  /classify:
+    post:
+      summary: Classify invoice email intent
+      description: Analyze email and classify intent as INV, CRN, PAY, DIS, DUP or OTH
+      operationId: classifyInvoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                subject:
+                  type: string
+                  description: Email subject line
+                body:
+                  type: string
+                  description: Email body text
+                structured_data:
+                  type: string
+                  description: JSON string of structured data from attachments (amounts, dates, etc.)
+              required:
+                - subject
+                - body
+      responses:
+        '200':
+          description: Classification successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  intent_code:
+                    type: string
+                  confidence:
+                    type: number
+                  reasoning:
+                    type: string
+                  manual_review_required:
+                    type: boolean

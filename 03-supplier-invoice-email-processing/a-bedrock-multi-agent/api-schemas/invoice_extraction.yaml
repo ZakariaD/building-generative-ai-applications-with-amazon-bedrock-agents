@@ -1,0 +1,57 @@
+openapi: 3.0.0
+info:
+  title: Invoice Extraction Agent API
+  version: 1.0.0
+  description: API for extracting invoice data from supplier emails
+paths:
+  /extract:
+    post:
+      summary: Extract invoice data from email
+      description: Extract invoice numbers, PO numbers, supplier info and amounts from S3 email
+      operationId: extractInvoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                s3_bucket:
+                  type: string
+                  description: S3 bucket name
+                s3_object_key:
+                  type: string
+                  description: S3 object key for .eml file
+              required:
+                - s3_bucket
+                - s3_object_key
+      responses:
+        '200':
+          description: Extraction successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sender_email:
+                    type: string
+                  email_domain:
+                    type: string
+                  recipient_email:
+                    type: string
+                  subject:
+                    type: string
+                  email_body:
+                    type: string
+                  invoice_numbers:
+                    type: array
+                  po_numbers:
+                    type: array
+                  supplier_name:
+                    type: string
+                  total_amount:
+                    type: string
+                  currency:
+                    type: string
+                  invoice_date:
+                    type: string

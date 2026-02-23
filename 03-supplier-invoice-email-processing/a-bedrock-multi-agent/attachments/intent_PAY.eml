@@ -1,0 +1,67 @@
+From: finance@company-e.de
+To: supplier-invoices@ingestion.company.com
+Subject: Payment Status Inquiry - Invoice GI-2026-00750
+Date: Fri, 21 Feb 2026 08:30:00 +0100
+Message-ID: <intent-PAY@company-e.de>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="inv_boundary"
+
+--inv_boundary
+Content-Type: text/plain; charset="UTF-8"
+
+Hello Accounts Payable Team,
+
+We are writing to inquire about the payment status of the following invoice.
+
+Invoice Details:
+- Supplier: Company E GmbH
+- Invoice Number: GI-2026-00750
+- Invoice Date: January 20, 2026
+- Due Date: February 19, 2026
+- Amount: $15,300.00 USD
+
+Our records indicate that payment has not yet been received for the above invoice, which is now past due.
+Please confirm whether payment has been processed and provide remittance advice if available.
+
+Should you require any additional information, please do not hesitate to contact our finance department.
+
+Best regards,
+Company E GmbH - Finance Department
+finance@company-e.de
+
+--inv_boundary
+Content-Type: application/pdf
+Content-Disposition: attachment; filename="intent_PAY.pdf"
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjMKJZOMi54gUmVwb3J0TGFiIEdlbmVyYXRlZCBQREYgZG9jdW1lbnQgKG9wZW5zb3Vy
+Y2UpCjEgMCBvYmoKPDwKL0YxIDIgMCBSIC9GMiAzIDAgUgo+PgplbmRvYmoKMiAwIG9iago8PAov
+QmFzZUZvbnQgL0hlbHZldGljYSAvRW5jb2RpbmcgL1dpbkFuc2lFbmNvZGluZyAvTmFtZSAvRjEg
+L1N1YnR5cGUgL1R5cGUxIC9UeXBlIC9Gb250Cj4+CmVuZG9iagozIDAgb2JqCjw8Ci9CYXNlRm9u
+dCAvSGVsdmV0aWNhLUJvbGQgL0VuY29kaW5nIC9XaW5BbnNpRW5jb2RpbmcgL05hbWUgL0YyIC9T
+dWJ0eXBlIC9UeXBlMSAvVHlwZSAvRm9udAo+PgplbmRvYmoKNCAwIG9iago8PAovQ29udGVudHMg
+OCAwIFIgL01lZGlhQm94IFsgMCAwIDYxMiA3OTIgXSAvUGFyZW50IDcgMCBSIC9SZXNvdXJjZXMg
+PDwKL0ZvbnQgMSAwIFIgL1Byb2NTZXQgWyAvUERGIC9UZXh0IC9JbWFnZUIgL0ltYWdlQyAvSW1h
+Z2VJIF0KPj4gL1JvdGF0ZSAwIC9UcmFucyA8PAoKPj4gCiAgL1R5cGUgL1BhZ2UKPj4KZW5kb2Jq
+CjUgMCBvYmoKPDwKL1BhZ2VNb2RlIC9Vc2VOb25lIC9QYWdlcyA3IDAgUiAvVHlwZSAvQ2F0YWxv
+Zwo+PgplbmRvYmoKNiAwIG9iago8PAovQXV0aG9yIChhbm9ueW1vdXMpIC9DcmVhdGlvbkRhdGUg
+KEQ6MjAyNjAyMjIxNTM5MjMtMDUnMDAnKSAvQ3JlYXRvciAoYW5vbnltb3VzKSAvS2V5d29yZHMg
+KCkgL01vZERhdGUgKEQ6MjAyNjAyMjIxNTM5MjMtMDUnMDAnKSAvUHJvZHVjZXIgKFJlcG9ydExh
+YiBQREYgTGlicmFyeSAtIFwob3BlbnNvdXJjZVwpKSAKICAvU3ViamVjdCAodW5zcGVjaWZpZWQp
+IC9UaXRsZSAodW50aXRsZWQpIC9UcmFwcGVkIC9GYWxzZQo+PgplbmRvYmoKNyAwIG9iago8PAov
+Q291bnQgMSAvS2lkcyBbIDQgMCBSIF0gL1R5cGUgL1BhZ2VzCj4+CmVuZG9iago4IDAgb2JqCjw8
+Ci9GaWx0ZXIgWyAvQVNDSUk4NURlY29kZSAvRmxhdGVEZWNvZGUgXSAvTGVuZ3RoIDI1NQo+Pgpz
+dHJlYW0KR2FycCdiNmwqPyYtXkZvP1pERF5bKkhULkNOaHRCKDAjXCJLaElbPE1KN3VOXzdxcSlV
+KG80Jj1eM3ExTCtwW2dbZFImcSIsNTxuXyNpbSlwMDgsQ0wvP0U6L2tmX3FsMic7LWhcQC51ZjNH
+Lkw/aFNeOEUxbWdwPG5oPCRDSHUwdVJcLTJPclQsKlpnUl8tMkFfMiFOJFNZN3NbU05KIzEhdGRA
+RGRhTkhablApbmwxbC8kUXBjclcrV1ZjNT46I0tJQkEkc0oybDZSaz9vPSU/IS1zTVkmZT1aOU9d
+VkhVP2AvMGkmJFhsS15uIUJHOUJBYURdYDpNXj5BRn4+ZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAg
+OQowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwNjEgMDAwMDAgbiAKMDAwMDAwMDEwMiAwMDAw
+MCBuIAowMDAwMDAwMjA5IDAwMDAwIG4gCjAwMDAwMDAzMjEgMDAwMDAgbiAKMDAwMDAwMDUxNCAw
+MDAwMCBuIAowMDAwMDAwNTgyIDAwMDAwIG4gCjAwMDAwMDA4NDMgMDAwMDAgbiAKMDAwMDAwMDkw
+MiAwMDAwMCBuIAp0cmFpbGVyCjw8Ci9JRCAKWzwwYzcyMTU4YzljZjAxYTlmNDIyYTk0ZDVjZWMw
+ZWY1MT48MGM3MjE1OGM5Y2YwMWE5ZjQyMmE5NGQ1Y2VjMGVmNTE+XQolIFJlcG9ydExhYiBnZW5l
+cmF0ZWQgUERGIGRvY3VtZW50IC0tIGRpZ2VzdCAob3BlbnNvdXJjZSkKCi9JbmZvIDYgMCBSCi9S
+b290IDUgMCBSCi9TaXplIDkKPj4Kc3RhcnR4cmVmCjEyNDcKJSVFT0YK
+
+--inv_boundary--

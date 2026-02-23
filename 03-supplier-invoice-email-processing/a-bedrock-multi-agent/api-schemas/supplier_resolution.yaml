@@ -1,0 +1,46 @@
+openapi: 3.0.0
+info:
+  title: Supplier Resolution Agent API
+  version: 1.0.0
+  description: API for resolving supplier identity from DynamoDB
+paths:
+  /resolve:
+    post:
+      summary: Resolve supplier from SupplierDirectory
+      description: Query DynamoDB SupplierDirectory to resolve supplier ID and type
+      operationId: resolveSupplier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email_domain:
+                  type: string
+                  description: Supplier email domain for lookup
+                supplier_name:
+                  type: string
+                  description: Supplier name for fallback lookup
+              required:
+                - email_domain
+      responses:
+        '200':
+          description: Supplier resolved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  supplier_id:
+                    type: string
+                  supplier_name:
+                    type: string
+                  supplier_type:
+                    type: string
+                  default_currency:
+                    type: string
+                  ap_routing_code:
+                    type: string
+                  unknown_vendor:
+                    type: boolean

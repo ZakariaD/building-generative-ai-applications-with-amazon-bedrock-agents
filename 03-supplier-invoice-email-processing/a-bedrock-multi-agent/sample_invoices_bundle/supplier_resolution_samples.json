@@ -1,0 +1,7 @@
+{
+  "SupplierDirectory": [
+    {"PutRequest": {"Item": {"email_domain": {"S": "acme-supplies.com"}, "supplier_id": {"S": "V12345"}, "supplier_name": {"S": "ACME Supplies Ltd"}, "supplier_type": {"S": "STANDARD"}, "default_currency": {"S": "USD"}, "ap_routing_code": {"S": "SAP_AP_US"}}}},
+    {"PutRequest": {"Item": {"email_domain": {"S": "globex-industrial.com"}, "supplier_id": {"S": "V67890"}, "supplier_name": {"S": "Globex Industrial"}, "supplier_type": {"S": "STRATEGIC"}, "default_currency": {"S": "EUR"}, "ap_routing_code": {"S": "ORACLE_AP_EU"}}}},
+    {"PutRequest": {"Item": {"email_domain": {"S": "onetime-vendor.net"}, "supplier_id": {"S": "V99999"}, "supplier_name": {"S": "One-Time Vendor"}, "supplier_type": {"S": "ONE_TIME"}, "default_currency": {"S": "USD"}, "ap_routing_code": {"S": "AP_MANUAL"}}}}
+  ]
+}

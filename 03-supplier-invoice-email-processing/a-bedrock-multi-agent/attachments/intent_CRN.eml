@@ -1,0 +1,69 @@
+From: billing@company-d.com
+To: supplier-invoices@ingestion.company.com
+Subject: Credit Note CN-2026-00145 - Invoice INV-458900
+Date: Thu, 19 Feb 2026 11:00:00 -0500
+Message-ID: <intent-CRN@company-d.com>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="inv_boundary"
+
+--inv_boundary
+Content-Type: text/plain; charset="UTF-8"
+
+Hello Accounts Payable Team,
+
+Please find attached a credit note for your review and processing.
+
+Credit Note Details:
+- Supplier: Company D Inc
+- Credit Note Number: CN-2026-00145
+- Related Invoice: INV-458900
+- Credit Note Date: February 19, 2026
+- Adjustment Amount: -$1,200.00 USD
+- Reason: Pricing adjustment per agreed contract terms
+
+Payment Instructions:
+Please apply this credit memo against the outstanding balance for invoice INV-458900.
+Reference CN-2026-00145 on all correspondence.
+
+Should you have any questions regarding this credit note, please do not hesitate to contact our billing department.
+
+Best regards,
+Company D Inc - Billing Department
+billing@company-d.com
+
+--inv_boundary
+Content-Type: application/pdf
+Content-Disposition: attachment; filename="intent_CRN.pdf"
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjMKJZOMi54gUmVwb3J0TGFiIEdlbmVyYXRlZCBQREYgZG9jdW1lbnQgKG9wZW5zb3Vy
+Y2UpCjEgMCBvYmoKPDwKL0YxIDIgMCBSIC9GMiAzIDAgUgo+PgplbmRvYmoKMiAwIG9iago8PAov
+QmFzZUZvbnQgL0hlbHZldGljYSAvRW5jb2RpbmcgL1dpbkFuc2lFbmNvZGluZyAvTmFtZSAvRjEg
+L1N1YnR5cGUgL1R5cGUxIC9UeXBlIC9Gb250Cj4+CmVuZG9iagozIDAgb2JqCjw8Ci9CYXNlRm9u
+dCAvSGVsdmV0aWNhLUJvbGQgL0VuY29kaW5nIC9XaW5BbnNpRW5jb2RpbmcgL05hbWUgL0YyIC9T
+dWJ0eXBlIC9UeXBlMSAvVHlwZSAvRm9udAo+PgplbmRvYmoKNCAwIG9iago8PAovQ29udGVudHMg
+OCAwIFIgL01lZGlhQm94IFsgMCAwIDYxMiA3OTIgXSAvUGFyZW50IDcgMCBSIC9SZXNvdXJjZXMg
+PDwKL0ZvbnQgMSAwIFIgL1Byb2NTZXQgWyAvUERGIC9UZXh0IC9JbWFnZUIgL0ltYWdlQyAvSW1h
+Z2VJIF0KPj4gL1JvdGF0ZSAwIC9UcmFucyA8PAoKPj4gCiAgL1R5cGUgL1BhZ2UKPj4KZW5kb2Jq
+CjUgMCBvYmoKPDwKL1BhZ2VNb2RlIC9Vc2VOb25lIC9QYWdlcyA3IDAgUiAvVHlwZSAvQ2F0YWxv
+Zwo+PgplbmRvYmoKNiAwIG9iago8PAovQXV0aG9yIChhbm9ueW1vdXMpIC9DcmVhdGlvbkRhdGUg
+KEQ6MjAyNjAyMjIxNTM5MjMtMDUnMDAnKSAvQ3JlYXRvciAoYW5vbnltb3VzKSAvS2V5d29yZHMg
+KCkgL01vZERhdGUgKEQ6MjAyNjAyMjIxNTM5MjMtMDUnMDAnKSAvUHJvZHVjZXIgKFJlcG9ydExh
+YiBQREYgTGlicmFyeSAtIFwob3BlbnNvdXJjZVwpKSAKICAvU3ViamVjdCAodW5zcGVjaWZpZWQp
+IC9UaXRsZSAodW50aXRsZWQpIC9UcmFwcGVkIC9GYWxzZQo+PgplbmRvYmoKNyAwIG9iago8PAov
+Q291bnQgMSAvS2lkcyBbIDQgMCBSIF0gL1R5cGUgL1BhZ2VzCj4+CmVuZG9iago4IDAgb2JqCjw8
+Ci9GaWx0ZXIgWyAvQVNDSUk4NURlY29kZSAvRmxhdGVEZWNvZGUgXSAvTGVuZ3RoIDI2Nwo+Pgpz
+dHJlYW0KR2FybzxiRE8vJSY0UT5CYEVlS2phNktQTidBXVkwNVg3KXQyNyFndUtudCFzOzQsLC1t
+RHU1Ni4mbiUhY0ZIYWFqQDh1TTw1PVlPcks8NkxdU0chZiMtWDBZYVFMXGw0dVllImFRNlw+JmpH
+LGxLb2FiMk0sUW47YyxnZk0hKU5TN24obDsiJ21bam5ncFk4T1Qmcy00PExfVGlMbHA5LVg3KUgk
+ZHMlR05ZM182LVNUU1RtJ0liOF9VXmRXLCc1PE1GbG5SdHFjSUgwZ1o+YiZXcjxhUTcxU1M9Ly4q
+b3AvWGZqQlY2SSg7ZGg+Xy5jMjxWUT82aTpiMXBDajpaViQzVkUsXUAhdH4+ZW5kc3RyZWFtCmVu
+ZG9iagp4cmVmCjAgOQowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwNjEgMDAwMDAgbiAKMDAw
+MDAwMDEwMiAwMDAwMCBuIAowMDAwMDAwMjA5IDAwMDAwIG4gCjAwMDAwMDAzMjEgMDAwMDAgbiAK
+MDAwMDAwMDUxNCAwMDAwMCBuIAowMDAwMDAwNTgyIDAwMDAwIG4gCjAwMDAwMDA4NDMgMDAwMDAg
+biAKMDAwMDAwMDkwMiAwMDAwMCBuIAp0cmFpbGVyCjw8Ci9JRCAKWzxjMDNkMjAyZWU1MDk3ZTA0
+YTllNzU4OTFkNjNhY2FhNj48YzAzZDIwMmVlNTA5N2UwNGE5ZTc1ODkxZDYzYWNhYTY+XQolIFJl
+cG9ydExhYiBnZW5lcmF0ZWQgUERGIGRvY3VtZW50IC0tIGRpZ2VzdCAob3BlbnNvdXJjZSkKCi9J
+bmZvIDYgMCBSCi9Sb290IDUgMCBSCi9TaXplIDkKPj4Kc3RhcnR4cmVmCjEyNTkKJSVFT0YK
+
+--inv_boundary--

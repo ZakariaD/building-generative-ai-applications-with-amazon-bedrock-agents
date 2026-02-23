@@ -1,0 +1,69 @@
+From: billing@company-a.com
+To: supplier-invoices@ingestion.company.com
+Subject: Invoice INV-458921 - PO 771245
+Date: Tue, 20 Feb 2026 10:18:00 -0500
+Message-ID: <intent-INV@company-a.com>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="inv_boundary"
+
+--inv_boundary
+Content-Type: text/plain; charset="UTF-8"
+
+Hello Accounts Payable Team,
+
+Please find attached our invoice for your review and processing.
+
+Invoice Details:
+- Supplier: Company A Ltd
+- Invoice Number: INV-458921
+- PO Number: 771245
+- Invoice Date: February 18, 2026
+- Due Date: March 20, 2026
+- Amount: $12,450.00 USD
+
+Payment Instructions:
+Please process this invoice in accordance with our agreed payment terms (Net 30).
+Reference PO 771245 on all correspondence.
+
+Should you have any questions regarding this invoice, please do not hesitate to contact our billing department.
+
+Best regards,
+Company A Ltd - Billing Department
+billing@company-a.com
+
+--inv_boundary
+Content-Type: application/pdf
+Content-Disposition: attachment; filename="intent_INV.pdf"
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjMKJZOMi54gUmVwb3J0TGFiIEdlbmVyYXRlZCBQREYgZG9jdW1lbnQgKG9wZW5zb3Vy
+Y2UpCjEgMCBvYmoKPDwKL0YxIDIgMCBSIC9GMiAzIDAgUgo+PgplbmRvYmoKMiAwIG9iago8PAov
+QmFzZUZvbnQgL0hlbHZldGljYSAvRW5jb2RpbmcgL1dpbkFuc2lFbmNvZGluZyAvTmFtZSAvRjEg
+L1N1YnR5cGUgL1R5cGUxIC9UeXBlIC9Gb250Cj4+CmVuZG9iagozIDAgb2JqCjw8Ci9CYXNlRm9u
+dCAvSGVsdmV0aWNhLUJvbGQgL0VuY29kaW5nIC9XaW5BbnNpRW5jb2RpbmcgL05hbWUgL0YyIC9T
+dWJ0eXBlIC9UeXBlMSAvVHlwZSAvRm9udAo+PgplbmRvYmoKNCAwIG9iago8PAovQ29udGVudHMg
+OCAwIFIgL01lZGlhQm94IFsgMCAwIDYxMiA3OTIgXSAvUGFyZW50IDcgMCBSIC9SZXNvdXJjZXMg
+PDwKL0ZvbnQgMSAwIFIgL1Byb2NTZXQgWyAvUERGIC9UZXh0IC9JbWFnZUIgL0ltYWdlQyAvSW1h
+Z2VJIF0KPj4gL1JvdGF0ZSAwIC9UcmFucyA8PAoKPj4gCiAgL1R5cGUgL1BhZ2UKPj4KZW5kb2Jq
+CjUgMCBvYmoKPDwKL1BhZ2VNb2RlIC9Vc2VOb25lIC9QYWdlcyA3IDAgUiAvVHlwZSAvQ2F0YWxv
+Zwo+PgplbmRvYmoKNiAwIG9iago8PAovQXV0aG9yIChhbm9ueW1vdXMpIC9DcmVhdGlvbkRhdGUg
+KEQ6MjAyNjAyMjIxNTM5MjMtMDUnMDAnKSAvQ3JlYXRvciAoYW5vbnltb3VzKSAvS2V5d29yZHMg
+KCkgL01vZERhdGUgKEQ6MjAyNjAyMjIxNTM5MjMtMDUnMDAnKSAvUHJvZHVjZXIgKFJlcG9ydExh
+YiBQREYgTGlicmFyeSAtIFwob3BlbnNvdXJjZVwpKSAKICAvU3ViamVjdCAodW5zcGVjaWZpZWQp
+IC9UaXRsZSAodW50aXRsZWQpIC9UcmFwcGVkIC9GYWxzZQo+PgplbmRvYmoKNyAwIG9iago8PAov
+Q291bnQgMSAvS2lkcyBbIDQgMCBSIF0gL1R5cGUgL1BhZ2VzCj4+CmVuZG9iago4IDAgb2JqCjw8
+Ci9GaWx0ZXIgWyAvQVNDSUk4NURlY29kZSAvRmxhdGVEZWNvZGUgXSAvTGVuZ3RoIDI0NQo+Pgpz
+dHJlYW0KR2Fybzw5Ky9VJSUjIipLTUUuXWBcZEAtWWc3KGtMTUAtTkM5MyJnVCIwJG5QaEs6PlBf
+JU1wS09EY0ohK0RkMTBCYTBNKiMnMGkjYlJsK0sjbnBmXDNfaj1nMypsQFZYNCxmSSYuIS1CJSxK
+bUNbb3VJOzRkXCQhczI0bTJEPVhiS15VXVdramBKIiVRa1dca2o6QDFcPThRQD4tNztjYFMpOS0m
+SEFHcj5uNzgySTlXYTklZFA6JmZLSjRbOzYyUlprW2xSNTVsY2skSC1lS1siJWBuSldVVEN1ZTxK
+OWFPTUg+RSFLa05hODQ5PildPE42fj5lbmRzdHJlYW0KZW5kb2JqCnhyZWYKMCA5CjAwMDAwMDAw
+MDAgNjU1MzUgZiAKMDAwMDAwMDA2MSAwMDAwMCBuIAowMDAwMDAwMTAyIDAwMDAwIG4gCjAwMDAw
+MDAyMDkgMDAwMDAgbiAKMDAwMDAwMDMyMSAwMDAwMCBuIAowMDAwMDAwNTE0IDAwMDAwIG4gCjAw
+MDAwMDA1ODIgMDAwMDAgbiAKMDAwMDAwMDg0MyAwMDAwMCBuIAowMDAwMDAwOTAyIDAwMDAwIG4g
+CnRyYWlsZXIKPDwKL0lEIApbPDYzY2Y4MzlkOTc2MjU3Y2FhODQ0ZTk0MDUwZDc4NDMzPjw2M2Nm
+ODM5ZDk3NjI1N2NhYTg0NGU5NDA1MGQ3ODQzMz5dCiUgUmVwb3J0TGFiIGdlbmVyYXRlZCBQREYg
+ZG9jdW1lbnQgLS0gZGlnZXN0IChvcGVuc291cmNlKQoKL0luZm8gNiAwIFIKL1Jvb3QgNSAwIFIK
+L1NpemUgOQo+PgpzdGFydHhyZWYKMTIzNwolJUVPRgo=
+
+--inv_boundary--
