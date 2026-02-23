@@ -77,7 +77,6 @@
 │   └── load_customer_data.py       # Load suppliers to DynamoDB
 ├── sample_data/                    # Sample data files
 │   └── supplier_data.json          # Supplier records for DynamoDB
-├── sample_invoices_bundle/         # Additional sample emails
 ├── app.py                          # CDK application entry point
 ├── email_processing_stack.py       # CDK stack definition
 ├── cdk.json                        # CDK configuration
