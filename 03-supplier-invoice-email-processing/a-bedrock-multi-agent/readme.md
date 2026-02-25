@@ -89,9 +89,9 @@
 ![Architecture Diagram](./Architecture/Architecture.png)
 
 ```
-              Supplier Email → SES (MX Record)
+                    Supplier Email 
                               ↓
-                    S3 email upload (no extension)
+                    S3 email upload 
                               ↓
                   ┌─────────────────────┐
                   │    SQS Queue        │ ◄── S3 event notification
@@ -101,7 +101,7 @@
                              ▼
                   ┌─────────────────────┐
                   │  Lambda Function    │ ◄── Triggered by SQS
-                  │  (Orchestrator)     │     (batch_size=1)
+                  │  (Orchestrator)     │     
                   └──────────┬──────────┘
                              │
                              ▼
