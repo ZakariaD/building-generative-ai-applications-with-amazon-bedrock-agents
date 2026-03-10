@@ -86,6 +86,8 @@
 
 ## Architecture
 
+> **📥 Download**: [Architecture Diagram](Architecture/Architecture.zip)
+
 ![Architecture Diagram](./Architecture/Architecture.png)
 
 ```
