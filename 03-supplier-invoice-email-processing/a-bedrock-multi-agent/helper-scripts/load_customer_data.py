@@ -6,7 +6,7 @@ with open('sample_data/supplier_data.json', 'r') as f:
     suppliers = json.load(f)
 
 dynamodb = boto3.client('dynamodb', region_name='us-east-1')
-table_name = 'blog-multi-agents-supplier-directory'
+table_name = 'DYNAMODB_TABLE_NAME'
 
 print(f"Loading {len(suppliers)} suppliers into {table_name}...")
 
