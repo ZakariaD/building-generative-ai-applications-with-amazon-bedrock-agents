@@ -18,6 +18,12 @@ def lambda_handler(event, context):
         message_id = record['messageId']
         try:
             s3_event = json.loads(record['body'])
+            # When S3 → SQS notification is first created,
+            # S3 sends an s3:TestEvent to verify the connection. This test message
+            # lacks the 'Records' key that real S3 upload events have, so we skip it.
+            if 'Records' not in s3_event:
+                logger.info(f"Skipping s3:TestEvent — When S3-SQS notification is first created, S3 sends a test message that lacks the Records key. Body: {record['body'][:200]}")
+                continue
             s3_record = s3_event['Records'][0]['s3']
             s3_bucket = s3_record['bucket']['name']
             s3_object_key = unquote_plus(s3_record['object']['key'])

@@ -151,8 +151,7 @@ class EmailProcessingStack(Stack):
             runtime=_lambda.Runtime.PYTHON_3_13,
             handler="index.lambda_handler",
             code=_lambda.Code.from_asset("lambda_functions/intent_classification"),
-            role=lambda_role, timeout=Duration.seconds(900), memory_size=512,
-            environment={"FOUNDATION_MODEL": self.FOUNDATION_MODEL},
+            role=lambda_role, timeout=Duration.seconds(900), memory_size=256,
             log_retention=logs.RetentionDays.ONE_DAY)
 
         routing_lambda = _lambda.Function(self, "RoutingLambda",
