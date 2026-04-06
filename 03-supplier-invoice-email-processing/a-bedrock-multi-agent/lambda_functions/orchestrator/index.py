@@ -27,6 +27,13 @@ def lambda_handler(event, context):
             s3_record = s3_event['Records'][0]['s3']
             s3_bucket = s3_record['bucket']['name']
             s3_object_key = unquote_plus(s3_record['object']['key'])
+
+            # Skip SES setup notification — SES drops this file when receipt rules
+            # are first activated to confirm it has write access to the bucket.
+            if s3_object_key.endswith('AMAZON_SES_SETUP_NOTIFICATION'):
+                logger.info(f"Skipping AMAZON_SES_SETUP_NOTIFICATION: {s3_object_key}")
+                continue
+
             upload_timestamp = datetime.utcnow().isoformat() + 'Z'
 
             logger.info(f"Processing SQS Message ID: {message_id}")

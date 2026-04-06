@@ -1,0 +1,98 @@
+[
+  {
+    "email_domain": "company-a.com",
+    "supplier_id": "V12345",
+    "supplier_name": "Company A Ltd",
+    "supplier_type": "STANDARD",
+    "default_currency": "USD",
+    "ap_routing_code": "AP_INBOX"
+  },
+  {
+    "email_domain": "company-b.com",
+    "supplier_id": "V67890",
+    "supplier_name": "Company B GmbH",
+    "supplier_type": "STRATEGIC",
+    "default_currency": "EUR",
+    "ap_routing_code": "AP_INBOX"
+  },
+  {
+    "email_domain": "company-c.net",
+    "supplier_id": "V99999",
+    "supplier_name": "Company C LLC",
+    "supplier_type": "ONE_TIME",
+    "default_currency": "USD",
+    "ap_routing_code": "AP_MANUAL"
+  },
+  {
+    "email_domain": "company-d.com",
+    "supplier_id": "V11100",
+    "supplier_name": "Company D Inc",
+    "supplier_type": "STANDARD",
+    "default_currency": "USD",
+    "ap_routing_code": "AP_INBOX"
+  },
+  {
+    "email_domain": "company-e.de",
+    "supplier_id": "V22200",
+    "supplier_name": "Company E GmbH",
+    "supplier_type": "STRATEGIC",
+    "default_currency": "EUR",
+    "ap_routing_code": "AP_INBOX"
+  },
+  {
+    "email_domain": "company-f.co.uk",
+    "supplier_id": "V33300",
+    "supplier_name": "Company F Ltd",
+    "supplier_type": "STANDARD",
+    "default_currency": "GBP",
+    "ap_routing_code": "AP_INBOX"
+  },
+  {
+    "email_domain": "company-g.co.jp",
+    "supplier_id": "V44400",
+    "supplier_name": "Company G Co",
+    "supplier_type": "STRATEGIC",
+    "default_currency": "JPY",
+    "ap_routing_code": "AP_INBOX"
+  },
+  {
+    "email_domain": "company-h.com.au",
+    "supplier_id": "V55500",
+    "supplier_name": "Company H Pty Ltd",
+    "supplier_type": "STANDARD",
+    "default_currency": "AUD",
+    "ap_routing_code": "AP_INBOX"
+  },
+  {
+    "email_domain": "company-i.com",
+    "supplier_id": "V66600",
+    "supplier_name": "Company I Corp",
+    "supplier_type": "STANDARD",
+    "default_currency": "USD",
+    "ap_routing_code": "AP_INBOX"
+  },
+  {
+    "email_domain": "company-j.se",
+    "supplier_id": "V77700",
+    "supplier_name": "Company J AB",
+    "supplier_type": "STRATEGIC",
+    "default_currency": "EUR",
+    "ap_routing_code": "AP_INBOX"
+  },
+  {
+    "email_domain": "company-k.io",
+    "supplier_id": "V88800",
+    "supplier_name": "Company K LLC",
+    "supplier_type": "ONE_TIME",
+    "default_currency": "USD",
+    "ap_routing_code": "AP_MANUAL"
+  },
+  {
+    "email_domain": "company-l.ca",
+    "supplier_id": "V10100",
+    "supplier_name": "Company L Inc",
+    "supplier_type": "STANDARD",
+    "default_currency": "CAD",
+    "ap_routing_code": "AP_INBOX"
+  }
+]

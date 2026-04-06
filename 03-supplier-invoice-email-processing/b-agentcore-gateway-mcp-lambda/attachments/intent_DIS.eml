@@ -1,0 +1,69 @@
+From: accounts@company-f.co.uk
+To: supplier-invoices@ingestion.company.com
+Subject: Dispute - Incorrect Amount on Invoice INV-458800
+Date: Mon, 17 Feb 2026 14:15:00 +0000
+Message-ID: <intent-DIS@company-f.co.uk>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="inv_boundary"
+
+--inv_boundary
+Content-Type: text/plain; charset="UTF-8"
+
+Hello Accounts Payable Team,
+
+We are writing to raise a dispute regarding the amount paid for the following invoice.
+
+Invoice Details:
+- Supplier: Company F Ltd
+- Invoice Number: INV-458800
+- Invoice Date: January 15, 2026
+- Invoiced Amount: $8,500.00 USD
+- Amount Received: $7,200.00 USD
+- Discrepancy: $1,300.00 USD
+
+We believe there is an incorrect deduction applied to our invoice. The agreed contract price does not include any such adjustment, and we have been overcharged on previous occasions as well.
+
+Please investigate this issue and arrange for the outstanding balance of $1,300.00 to be processed at your earliest convenience.
+
+Should you require supporting documentation, we are happy to provide it.
+
+Best regards,
+Company F Ltd - Accounts Receivable
+accounts@company-f.co.uk
+
+--inv_boundary
+Content-Type: application/pdf
+Content-Disposition: attachment; filename="intent_DIS.pdf"
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjMKJZOMi54gUmVwb3J0TGFiIEdlbmVyYXRlZCBQREYgZG9jdW1lbnQgKG9wZW5zb3Vy
+Y2UpCjEgMCBvYmoKPDwKL0YxIDIgMCBSIC9GMiAzIDAgUgo+PgplbmRvYmoKMiAwIG9iago8PAov
+QmFzZUZvbnQgL0hlbHZldGljYSAvRW5jb2RpbmcgL1dpbkFuc2lFbmNvZGluZyAvTmFtZSAvRjEg
+L1N1YnR5cGUgL1R5cGUxIC9UeXBlIC9Gb250Cj4+CmVuZG9iagozIDAgb2JqCjw8Ci9CYXNlRm9u
+dCAvSGVsdmV0aWNhLUJvbGQgL0VuY29kaW5nIC9XaW5BbnNpRW5jb2RpbmcgL05hbWUgL0YyIC9T
+dWJ0eXBlIC9UeXBlMSAvVHlwZSAvRm9udAo+PgplbmRvYmoKNCAwIG9iago8PAovQ29udGVudHMg
+OCAwIFIgL01lZGlhQm94IFsgMCAwIDYxMiA3OTIgXSAvUGFyZW50IDcgMCBSIC9SZXNvdXJjZXMg
+PDwKL0ZvbnQgMSAwIFIgL1Byb2NTZXQgWyAvUERGIC9UZXh0IC9JbWFnZUIgL0ltYWdlQyAvSW1h
+Z2VJIF0KPj4gL1JvdGF0ZSAwIC9UcmFucyA8PAoKPj4gCiAgL1R5cGUgL1BhZ2UKPj4KZW5kb2Jq
+CjUgMCBvYmoKPDwKL1BhZ2VNb2RlIC9Vc2VOb25lIC9QYWdlcyA3IDAgUiAvVHlwZSAvQ2F0YWxv
+Zwo+PgplbmRvYmoKNiAwIG9iago8PAovQXV0aG9yIChhbm9ueW1vdXMpIC9DcmVhdGlvbkRhdGUg
+KEQ6MjAyNjAyMjIxNTM5MjMtMDUnMDAnKSAvQ3JlYXRvciAoYW5vbnltb3VzKSAvS2V5d29yZHMg
+KCkgL01vZERhdGUgKEQ6MjAyNjAyMjIxNTM5MjMtMDUnMDAnKSAvUHJvZHVjZXIgKFJlcG9ydExh
+YiBQREYgTGlicmFyeSAtIFwob3BlbnNvdXJjZVwpKSAKICAvU3ViamVjdCAodW5zcGVjaWZpZWQp
+IC9UaXRsZSAodW50aXRsZWQpIC9UcmFwcGVkIC9GYWxzZQo+PgplbmRvYmoKNyAwIG9iago8PAov
+Q291bnQgMSAvS2lkcyBbIDQgMCBSIF0gL1R5cGUgL1BhZ2VzCj4+CmVuZG9iago4IDAgb2JqCjw8
+Ci9GaWx0ZXIgWyAvQVNDSUk4NURlY29kZSAvRmxhdGVEZWNvZGUgXSAvTGVuZ3RoIDIzOQo+Pgpz
+dHJlYW0KR2FzSzc/T01IPidGIXVNNUsub0wrUFlKc2lGPyI1ODQ6YltAa0tJQGAoS09SLWQwWiw1
+RSo0MCIyPXM0O05VJDxvO2BqdTg7dVtGUFgwMVFcXWw5QmJiU2ZqZWcpU2REPVBoYT5OJC08Yyxe
+bTwrSDJZRFNGbiVMT0ZyPmdndFZLcShhIStCQFw7bzVhN1BgOFJtVy9xVTMkMWJmNiwiaC9qKitS
+OVBHVS1AUWllNCY7NUVnWTJFVExxRktUR19CSGtzVi1JV144aDZINEdOSChvTVJSZk86OSlnZzZF
+N2FjM2R1amdYclMzXkAvfj5lbmRzdHJlYW0KZW5kb2JqCnhyZWYKMCA5CjAwMDAwMDAwMDAgNjU1
+MzUgZiAKMDAwMDAwMDA2MSAwMDAwMCBuIAowMDAwMDAwMTAyIDAwMDAwIG4gCjAwMDAwMDAyMDkg
+MDAwMDAgbiAKMDAwMDAwMDMyMSAwMDAwMCBuIAowMDAwMDAwNTE0IDAwMDAwIG4gCjAwMDAwMDA1
+ODIgMDAwMDAgbiAKMDAwMDAwMDg0MyAwMDAwMCBuIAowMDAwMDAwOTAyIDAwMDAwIG4gCnRyYWls
+ZXIKPDwKL0lEIApbPGJmMjc2YWIyN2Q5YTIxNTM5MTU0NzUwZGIwMzA5ZDdiPjxiZjI3NmFiMjdk
+OWEyMTUzOTE1NDc1MGRiMDMwOWQ3Yj5dCiUgUmVwb3J0TGFiIGdlbmVyYXRlZCBQREYgZG9jdW1l
+bnQgLS0gZGlnZXN0IChvcGVuc291cmNlKQoKL0luZm8gNiAwIFIKL1Jvb3QgNSAwIFIKL1NpemUg
+OQo+PgpzdGFydHhyZWYKMTIzMQolJUVPRgo=
+
+--inv_boundary--

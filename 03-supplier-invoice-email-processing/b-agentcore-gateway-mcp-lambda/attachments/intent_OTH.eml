@@ -1,0 +1,69 @@
+From: contact@company-h.com.au
+To: supplier-invoices@ingestion.company.com
+Subject: Updated Banking Details - Company H Pty Ltd
+Date: Tue, 18 Feb 2026 09:00:00 +1100
+Message-ID: <intent-OTH@company-h.com.au>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="inv_boundary"
+
+--inv_boundary
+Content-Type: text/plain; charset="UTF-8"
+
+Hello Accounts Payable Team,
+
+We are writing to inform you of a change to our banking details effective March 1, 2026.
+
+Please update your records accordingly:
+
+New Banking Details:
+- Bank: National Australia Bank
+- Account Name: Company H Pty Ltd
+- BSB: 082-123
+- Account Number: 123456789
+
+Please ensure all future payments are directed to the above account.
+If you have any pending payments scheduled, kindly update them before the effective date.
+
+For verification purposes, please contact our finance team at finance@company-h.com.au.
+
+Best regards,
+Company H Pty Ltd - Finance Team
+contact@company-h.com.au
+
+--inv_boundary
+Content-Type: application/pdf
+Content-Disposition: attachment; filename="intent_OTH.pdf"
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjMKJZOMi54gUmVwb3J0TGFiIEdlbmVyYXRlZCBQREYgZG9jdW1lbnQgKG9wZW5zb3Vy
+Y2UpCjEgMCBvYmoKPDwKL0YxIDIgMCBSIC9GMiAzIDAgUgo+PgplbmRvYmoKMiAwIG9iago8PAov
+QmFzZUZvbnQgL0hlbHZldGljYSAvRW5jb2RpbmcgL1dpbkFuc2lFbmNvZGluZyAvTmFtZSAvRjEg
+L1N1YnR5cGUgL1R5cGUxIC9UeXBlIC9Gb250Cj4+CmVuZG9iagozIDAgb2JqCjw8Ci9CYXNlRm9u
+dCAvSGVsdmV0aWNhLUJvbGQgL0VuY29kaW5nIC9XaW5BbnNpRW5jb2RpbmcgL05hbWUgL0YyIC9T
+dWJ0eXBlIC9UeXBlMSAvVHlwZSAvRm9udAo+PgplbmRvYmoKNCAwIG9iago8PAovQ29udGVudHMg
+OCAwIFIgL01lZGlhQm94IFsgMCAwIDYxMiA3OTIgXSAvUGFyZW50IDcgMCBSIC9SZXNvdXJjZXMg
+PDwKL0ZvbnQgMSAwIFIgL1Byb2NTZXQgWyAvUERGIC9UZXh0IC9JbWFnZUIgL0ltYWdlQyAvSW1h
+Z2VJIF0KPj4gL1JvdGF0ZSAwIC9UcmFucyA8PAoKPj4gCiAgL1R5cGUgL1BhZ2UKPj4KZW5kb2Jq
+CjUgMCBvYmoKPDwKL1BhZ2VNb2RlIC9Vc2VOb25lIC9QYWdlcyA3IDAgUiAvVHlwZSAvQ2F0YWxv
+Zwo+PgplbmRvYmoKNiAwIG9iago8PAovQXV0aG9yIChhbm9ueW1vdXMpIC9DcmVhdGlvbkRhdGUg
+KEQ6MjAyNjAyMjIxNTM5MjMtMDUnMDAnKSAvQ3JlYXRvciAoYW5vbnltb3VzKSAvS2V5d29yZHMg
+KCkgL01vZERhdGUgKEQ6MjAyNjAyMjIxNTM5MjMtMDUnMDAnKSAvUHJvZHVjZXIgKFJlcG9ydExh
+YiBQREYgTGlicmFyeSAtIFwob3BlbnNvdXJjZVwpKSAKICAvU3ViamVjdCAodW5zcGVjaWZpZWQp
+IC9UaXRsZSAodW50aXRsZWQpIC9UcmFwcGVkIC9GYWxzZQo+PgplbmRvYmoKNyAwIG9iago8PAov
+Q291bnQgMSAvS2lkcyBbIDQgMCBSIF0gL1R5cGUgL1BhZ2VzCj4+CmVuZG9iago4IDAgb2JqCjw8
+Ci9GaWx0ZXIgWyAvQVNDSUk4NURlY29kZSAvRmxhdGVEZWNvZGUgXSAvTGVuZ3RoIDI3NQo+Pgpz
+dHJlYW0KR2Fybzw/Iy47MidTYylUKCU6NjJlMFNnZj1tayJHO2MvRVtxdU5MLFRqLDpZRlBzcENW
+VycoLSVkLiowM1I6JlAnVm04RUFsOF0oYG5NOjVBXkQ7Q1Q1aidILCFCcCtsT29QQlJKYkNxOWVl
+InRGS0ozS0tMKjdSYSVJQ3FUN04jL1RtcmA1R0trNC06ckIqWG0rXEJkbyg4bU07NCE5QWM8K0xm
+Y2UtdD84Kj5zW19RY3QoVjI8SXM7P11PV247LU5GM19CXyNxaUA2Mz0hOUlbWTpFTm9CTVw+OE1W
+Ui5kME1XIyxlLClzbThFTmUzTyJeLCg3UjwzZUQuUV5rJSVra2I2RzxzQTlKMVc9P2Ujfj5lbmRz
+dHJlYW0KZW5kb2JqCnhyZWYKMCA5CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDA2MSAwMDAw
+MCBuIAowMDAwMDAwMTAyIDAwMDAwIG4gCjAwMDAwMDAyMDkgMDAwMDAgbiAKMDAwMDAwMDMyMSAw
+MDAwMCBuIAowMDAwMDAwNTE0IDAwMDAwIG4gCjAwMDAwMDA1ODIgMDAwMDAgbiAKMDAwMDAwMDg0
+MyAwMDAwMCBuIAowMDAwMDAwOTAyIDAwMDAwIG4gCnRyYWlsZXIKPDwKL0lEIApbPDAzZDkxODIy
+M2U4MjhlZWQ4N2Y0YTEzYTAyZDY1YTM2PjwwM2Q5MTgyMjNlODI4ZWVkODdmNGExM2EwMmQ2NWEz
+Nj5dCiUgUmVwb3J0TGFiIGdlbmVyYXRlZCBQREYgZG9jdW1lbnQgLS0gZGlnZXN0IChvcGVuc291
+cmNlKQoKL0luZm8gNiAwIFIKL1Jvb3QgNSAwIFIKL1NpemUgOQo+PgpzdGFydHhyZWYKMTI2Nwol
+JUVPRgo=
+
+--inv_boundary--

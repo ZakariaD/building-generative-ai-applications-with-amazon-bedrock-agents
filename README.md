@@ -46,7 +46,10 @@ Automated invoice processing with multi-agent collaboration.
   - AP routing
   - Email attachment processing
 
-- **[b-agentcore-gateway-mcp-lambda](./03-supplier-invoice-email-processing/b-agentcore-gateway-mcp-lambda/)** - Coming soon
+- **[b-agentcore-gateway-mcp-lambda](./03-supplier-invoice-email-processing/b-agentcore-gateway-mcp-lambda/)** - AgentCore + MCP Gateway implementation
+  - Strands multi-agent orchestration on AgentCore Runtime
+  - MCP Gateways exposing Lambda tools
+  - Same business logic (extraction, classification, routing)
 
 ## 🚀 Getting Started
 
