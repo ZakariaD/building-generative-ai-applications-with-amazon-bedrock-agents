@@ -300,13 +300,32 @@ To change model: Update constant and redeploy. All agents automatically use new 
 
 ## Deployment
 
-#### 1. Synthesize CloudFormation Template
+#### 1. Set Up Amazon SES for Email Receiving
+
+The CDK stack creates the receipt rule set and rule automatically, but **domain verification and MX record must be in place before emails can be received** — CDK does not validate DNS at deploy time.
+
+> 📖 For a detailed walkthrough, see [Manage incoming emails with SES](https://aws.amazon.com/blogs/messaging-and-targeting/manage-incoming-emails-with-ses/).
+
+**Verify your domain in SES:**
+```bash
+aws ses verify-domain-identity --domain ingestion.company.com
+```
+Add the returned TXT record to your DNS and wait for verification to complete.
+
+**Add an MX record pointing to SES:**
+
+In your DNS provider, add an MX record for `ingestion.company.com`:
+```
+10 inbound-smtp.<CDK_DEFAULT_REGION>.amazonaws.com
+```
+
+#### 2. Synthesize CloudFormation Template
 
 ```bash
 cdk synth
 ```
 
-#### 2. Deploy Infrastructure
+#### 3. Deploy Infrastructure
 
 ```bash
 cdk deploy
@@ -362,11 +381,14 @@ aws dynamodb put-item \
 
 ### 2. Configure SES
 
+**Activate the receipt rule set (created by CDK):**
 ```bash
-# Verify sender email
-aws ses verify-email-identity --email-address supplier-invoices@ingestion.company.com
+aws ses set-active-receipt-rule-set \
+  --rule-set-name <STACK_NAME>-receipt-rules
+```
 
-# Verify AP recipient (if in sandbox)
+**Verify AP recipient (if in sandbox):**
+```bash
 aws ses verify-email-identity --email-address ap@company.com
 ```
 
