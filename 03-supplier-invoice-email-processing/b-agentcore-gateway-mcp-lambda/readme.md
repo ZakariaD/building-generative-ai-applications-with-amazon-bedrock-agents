@@ -564,14 +564,3 @@ For issues or questions:
 2. Review agent prompts in `strands/multi_agent_invoice.py`
 3. Verify IAM permissions (Lambda role, Gateway role, Runtime role)
 4. Test each Lambda function independently via MCP Gateway
-
-## Glossary
-
-| Term | Meaning |
-|------|---------|
-| AP | Account Payable — the finance team responsible for processing supplier invoices and payments |
-| AP_INBOX | Routing code: supplier is known, email is automatically routed to the AP inbox |
-| AP_MANUAL | Routing code: supplier is unknown (`UNKNOWN_VENDOR`), requires manual review by the AP team |
-| AgentCore Runtime | Bedrock AgentCore service that runs containerized agent applications |
-| MCP Gateway | Model Context Protocol gateway that exposes Lambda functions as tools to agents |
-| Strands | Python multi-agent framework using @tool decorators and Agent class |
