@@ -312,7 +312,7 @@ cdk synth
 cdk deploy
 ```
 
-#### 3. Note Deployment Outputs
+#### 3. Deployment Outputs
 
 After deployment, CDK will output:
 - **EmailBucketName** - S3 bucket for email uploads

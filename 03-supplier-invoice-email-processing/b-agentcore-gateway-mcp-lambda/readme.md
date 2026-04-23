@@ -215,7 +215,6 @@ The system uses a Strands multi-agent architecture with AgentCore MCP Gateways:
   - Extract invoice number(s), PO number(s), supplier name, date, amount
   - Fallback extraction from email body if no PDF
 - **Output**: Structured invoice data, recipient_email, invoice numbers, email metadata
-- **Note**: Lambda retains the Bedrock invoke_model call because Claude Vision requires raw PDF bytes — the agent LLM cannot process binary documents
 
 ### 4. Agent 2: Supplier Resolution (MCP Gateway → Lambda)
 - **Technology**: DynamoDB SupplierDirectory table
@@ -235,7 +234,6 @@ The system uses a Strands multi-agent architecture with AgentCore MCP Gateways:
   - Classifies into intent codes (INV, CRN, PAY, DIS, DUP, OTH)
   - Returns confidence score (0-100) and reasoning
 - **Output**: intent_code, confidence, confidence_level (high/medium/low), manual_review_required
-- **Note**: The agent's LLM handles classification — the Lambda is a pure data retrieval tool
 
 ### 6. Agent 4: AP Routing & Email Send (MCP Gateway → Lambda)
 - **Technology**: Amazon SES
@@ -322,7 +320,7 @@ cdk synth
 cdk deploy
 ```
 
-#### 3. Note Deployment Outputs
+#### 3. Deployment Outputs
 
 After deployment, CDK will output:
 - **EmailBucketName** - S3 bucket for email uploads
