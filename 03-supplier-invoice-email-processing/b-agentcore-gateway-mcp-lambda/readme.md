@@ -73,7 +73,7 @@
 ├── sample_data/                    # Sample data files
 │   └── supplier_data.json          # Supplier records for DynamoDB
 ├── app.py                          # CDK application entry point
-├── invoice_agentcore_stack.py      # CDK stack definition
+├── email_processing_stack.py      # CDK stack definition
 ├── cdk.json                        # CDK configuration
 ├── requirements.txt                # CDK dependencies
 └── README.md                       # This documentation
@@ -286,7 +286,7 @@ cdk bootstrap aws://$CDK_DEFAULT_ACCOUNT/$CDK_DEFAULT_REGION
 ```
 
 #### 3. Email Configuration (Centralized)
-All email addresses configured as class-level constants in `invoice_agentcore_stack.py`:
+All email addresses configured as class-level constants in `email_processing_stack.py`:
 
 ```python
 RECIPIENT_EMAILS = ["supplier-invoices@ingestion.company.com"]
@@ -431,7 +431,7 @@ All agent system prompts are defined in `strands/multi_agent_invoice.py`:
 
 ### MCP Gateway Tool Schemas
 
-Tool schemas are defined inline in `invoice_agentcore_stack.py` as `ToolDefinitionProperty`:
+Tool schemas are defined inline in `email_processing_stack.py` as `ToolDefinitionProperty`:
 - `extract_invoice_email` - Extraction tool (s3_bucket, s3_object_key)
 - `resolve_supplier` - Supplier resolution tool (email_domain, supplier_name)
 - `get_email_content` - Classification data retrieval tool (subject, body, structured_data)
@@ -519,7 +519,7 @@ cdk destroy
 ## Troubleshooting
 
 ### Lambda timeout errors
-- Increase timeout in `invoice_agentcore_stack.py`
+- Increase timeout in `email_processing_stack.py`
 - Check CloudWatch Logs for specific errors
 
 ### AgentCore Runtime not responding
