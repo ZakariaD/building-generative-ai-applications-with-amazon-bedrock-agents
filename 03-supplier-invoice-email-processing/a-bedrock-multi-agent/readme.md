@@ -306,18 +306,8 @@ The CDK stack creates the receipt rule set and rule automatically, but **domain 
 
 > 📖 For a detailed walkthrough, see [Manage incoming emails with SES](https://aws.amazon.com/blogs/messaging-and-targeting/manage-incoming-emails-with-ses/).
 
-**Verify your domain in SES:**
-```bash
-aws ses verify-domain-identity --domain ingestion.company.com
-```
-Add the returned TXT record to your DNS and wait for verification to complete.
-
-**Add an MX record pointing to SES:**
-
-In your DNS provider, add an MX record for `ingestion.company.com`:
-```
-10 inbound-smtp.<CDK_DEFAULT_REGION>.amazonaws.com
-```
+- Verify your ingestion domain in SES and add the returned TXT record to your DNS
+- Add an MX record pointing to `10 inbound-smtp.<CDK_DEFAULT_REGION>.amazonaws.com`
 
 #### 2. Synthesize CloudFormation Template
 
